@@ -53,9 +53,9 @@ export default function Welcome() {
           <img 
             src={backgroundImage} 
             alt="Biblioteca" 
-            className="w-full h-full object-cover opacity-20"
+            className="w-full h-full object-cover opacity-70"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/85 to-background/90" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/20 to-background/40" />
         </div>
         
         <header className="container mx-auto px-4 py-6">
