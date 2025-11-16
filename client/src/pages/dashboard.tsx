@@ -8,88 +8,88 @@ import { addDays, subDays } from "date-fns";
 const mockLoans: Loan[] = [
   {
     id: "1",
-    userName: "Maria Silva",
+    userName: "Maria Nzinga",
     userType: "estudante",
-    bookTitle: "Engenharia de Software",
+    bookTitle: "Introdução à Programação em Python",
     loanDate: subDays(new Date(), 3),
     dueDate: addDays(new Date(), 2),
     status: "active",
   },
   {
     id: "2",
-    userName: "João Costa",
+    userName: "Prof. António Cassoma",
     userType: "docente",
-    bookTitle: "Algoritmos e Estruturas de Dados",
-    loanDate: subDays(new Date(), 10),
-    dueDate: addDays(new Date(), 5),
+    bookTitle: "Estruturas de Dados e Algoritmos",
+    loanDate: subDays(new Date(), 8),
+    dueDate: addDays(new Date(), 7),
     status: "active",
   },
   {
     id: "3",
-    userName: "Ana Pereira",
+    userName: "Ana Kiluange",
     userType: "estudante",
-    bookTitle: "Redes de Computadores",
-    loanDate: subDays(new Date(), 8),
-    dueDate: subDays(new Date(), 2),
+    bookTitle: "Redes de Computadores - 5ª Edição",
+    loanDate: subDays(new Date(), 7),
+    dueDate: subDays(new Date(), 1),
     status: "overdue",
-    fine: 1000,
+    fine: 500,
   },
 ];
 
 const mockMostBorrowed = [
-  { title: "Engenharia de Software", count: 45, category: "Computer Science" },
-  { title: "Algoritmos Avançados", count: 38, category: "Computer Science" },
-  { title: "Gestão de Projetos", count: 32, category: "Management" },
-  { title: "Bases de Dados", count: 29, category: "Computer Science" },
-  { title: "Arquitectura de Computadores", count: 26, category: "Hardware" },
+  { title: "Fundamentos de Engenharia de Software", count: 67, category: "Engenharia de Software" },
+  { title: "Algoritmos: Teoria e Prática", count: 54, category: "Ciência da Computação" },
+  { title: "Sistemas Operacionais Modernos", count: 48, category: "Sistemas Operacionais" },
+  { title: "Banco de Dados: Conceitos e Projeto", count: 42, category: "Bases de Dados" },
+  { title: "Análise e Projeto de Sistemas", count: 38, category: "Engenharia de Software" },
 ];
 
 export default function Dashboard() {
   return (
     <div className="flex-1 space-y-6 p-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Painel Principal</h1>
         <p className="text-muted-foreground">
-          Overview of library operations and statistics
+          Visão geral das operações e estatísticas da biblioteca
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
-          title="Total Books"
-          value="2,847"
+          title="Total de Livros"
+          value="3.842"
           icon={BookOpen}
-          description="In collection"
+          description="No acervo"
+          trend={{ value: 8, isPositive: true }}
+        />
+        <StatsCard
+          title="Empréstimos Ativos"
+          value="247"
+          icon={BookCopy}
+          description="Atualmente emprestados"
           trend={{ value: 12, isPositive: true }}
         />
         <StatsCard
-          title="Active Loans"
-          value="184"
-          icon={BookCopy}
-          description="Currently borrowed"
+          title="Multas Pendentes"
+          value="87.500 Kz"
+          icon={AlertCircle}
+          description="De 34 utilizadores"
           trend={{ value: 5, isPositive: false }}
         />
         <StatsCard
-          title="Pending Fines"
-          value="45,000 Kz"
-          icon={AlertCircle}
-          description="From 23 users"
-          trend={{ value: 8, isPositive: false }}
-        />
-        <StatsCard
-          title="Total Users"
-          value="1,234"
+          title="Utilizadores Totais"
+          value="1.856"
           icon={Users}
-          description="Active accounts"
-          trend={{ value: 15, isPositive: true }}
+          description="Contas ativas"
+          trend={{ value: 18, isPositive: true }}
         />
       </div>
 
       <div className="grid gap-6 md:grid-cols-7">
         <Card className="md:col-span-4">
           <CardHeader>
-            <CardTitle>Most Borrowed Books</CardTitle>
-            <CardDescription>Top 5 books this month</CardDescription>
+            <CardTitle>Livros Mais Emprestados</CardTitle>
+            <CardDescription>Top 5 livros este mês</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -104,7 +104,7 @@ export default function Dashboard() {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="font-bold text-lg">{book.count}</p>
-                    <p className="text-xs text-muted-foreground">loans</p>
+                    <p className="text-xs text-muted-foreground">empréstimos</p>
                   </div>
                 </div>
               ))}
@@ -114,17 +114,17 @@ export default function Dashboard() {
 
         <Card className="md:col-span-3">
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest library events</CardDescription>
+            <CardTitle>Atividade Recente</CardTitle>
+            <CardDescription>Últimos eventos da biblioteca</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {[
-                { action: "Loan", user: "Maria Silva", book: "Eng. Software", time: "2h ago" },
-                { action: "Return", user: "João Costa", book: "Redes", time: "3h ago" },
-                { action: "Fine Paid", user: "Ana Pereira", amount: "1,500 Kz", time: "5h ago" },
-                { action: "Reservation", user: "Pedro Santos", book: "Algoritmos", time: "6h ago" },
-                { action: "Loan", user: "Carlos Lima", book: "Bases de Dados", time: "1d ago" },
+                { action: "Empréstimo", user: "Maria Nzinga", book: "Python Avançado", time: "há 2h" },
+                { action: "Devolução", user: "João Domingos", book: "Redes TCP/IP", time: "há 3h" },
+                { action: "Multa Paga", user: "Ana Kiluange", amount: "2.500 Kz", time: "há 4h" },
+                { action: "Reserva", user: "Pedro Sakaita", book: "Java Enterprise", time: "há 5h" },
+                { action: "Empréstimo", user: "Carlos Mateus", book: "Linux Essentials", time: "há 1d" },
               ].map((activity, index) => (
                 <div key={index} className="flex items-start gap-3">
                   <div className="flex h-2 w-2 mt-2 rounded-full bg-primary flex-shrink-0" />
@@ -147,15 +147,15 @@ export default function Dashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Upcoming Due Dates</CardTitle>
-          <CardDescription>Books due in the next 7 days</CardDescription>
+          <CardTitle>Próximas Devoluções</CardTitle>
+          <CardDescription>Livros com devolução prevista nos próximos 7 dias</CardDescription>
         </CardHeader>
         <CardContent>
           <LoanTable
             loans={mockLoans}
-            onReturn={(id) => console.log("Return loan:", id)}
-            onRenew={(id) => console.log("Renew loan:", id)}
-            onViewUser={(id) => console.log("View user:", id)}
+            onReturn={(id) => console.log("Devolver empréstimo:", id)}
+            onRenew={(id) => console.log("Renovar empréstimo:", id)}
+            onViewUser={(id) => console.log("Ver utilizador:", id)}
           />
         </CardContent>
       </Card>

@@ -16,28 +16,28 @@ import { Badge } from "@/components/ui/badge";
 const mockBooks = [
   {
     id: "1",
-    title: "Engenharia de Software: Uma Abordagem Moderna",
-    author: "Roger Pressman",
-    isbn: "978-8563308337",
-    category: "Computer Science",
+    title: "Fundamentos de Engenharia de Software",
+    author: "Roger S. Pressman",
+    isbn: "978-85-8055-933-7",
+    category: "Engenharia de Software",
     label: "white" as BookLabel,
     status: "available" as BookStatus,
   },
   {
     id: "2",
-    title: "Algoritmos e Estruturas de Dados",
-    author: "Thomas Cormen",
-    isbn: "978-8535236996",
-    category: "Computer Science",
+    title: "Algoritmos: Teoria e Prática",
+    author: "Thomas H. Cormen",
+    isbn: "978-85-352-3699-6",
+    category: "Ciência da Computação",
     label: "white" as BookLabel,
     status: "on-loan" as BookStatus,
   },
   {
     id: "3",
-    title: "Redes de Computadores",
-    author: "Andrew Tanenbaum",
-    isbn: "978-8582605592",
-    category: "Networking",
+    title: "Redes de Computadores - 6ª Edição",
+    author: "Andrew S. Tanenbaum",
+    isbn: "978-85-8260-559-2",
+    category: "Redes de Computadores",
     label: "yellow" as BookLabel,
     status: "available" as BookStatus,
   },
@@ -45,27 +45,81 @@ const mockBooks = [
     id: "4",
     title: "Introdução à Teoria da Computação",
     author: "Michael Sipser",
-    isbn: "978-8522106868",
-    category: "Theory",
+    isbn: "978-85-221-0686-8",
+    category: "Teoria da Computação",
     label: "red" as BookLabel,
     status: "available" as BookStatus,
   },
   {
     id: "5",
     title: "Sistemas Operacionais Modernos",
-    author: "Andrew Tanenbaum",
-    isbn: "978-8543020631",
-    category: "Operating Systems",
+    author: "Andrew S. Tanenbaum",
+    isbn: "978-85-4302-063-1",
+    category: "Sistemas Operacionais",
     label: "white" as BookLabel,
     status: "reserved" as BookStatus,
   },
   {
     id: "6",
-    title: "Banco de Dados: Projeto e Implementação",
+    title: "Projeto e Implementação de Bases de Dados",
     author: "Carlos Alberto Heuser",
-    isbn: "978-8577803828",
-    category: "Databases",
+    isbn: "978-85-7780-382-8",
+    category: "Bases de Dados",
     label: "white" as BookLabel,
+    status: "available" as BookStatus,
+  },
+  {
+    id: "7",
+    title: "Introdução à Programação em Python",
+    author: "Nilo Ney Coutinho Menezes",
+    isbn: "978-85-7522-718-3",
+    category: "Programação",
+    label: "white" as BookLabel,
+    status: "available" as BookStatus,
+  },
+  {
+    id: "8",
+    title: "Padrões de Projetos: Soluções Reutilizáveis",
+    author: "Erich Gamma",
+    isbn: "978-85-7780-701-7",
+    category: "Engenharia de Software",
+    label: "yellow" as BookLabel,
+    status: "on-loan" as BookStatus,
+  },
+  {
+    id: "9",
+    title: "Arquitetura de Computadores",
+    author: "José Delgado",
+    isbn: "978-972-722-756-4",
+    category: "Hardware",
+    label: "red" as BookLabel,
+    status: "available" as BookStatus,
+  },
+  {
+    id: "10",
+    title: "Inteligência Artificial: Uma Abordagem Moderna",
+    author: "Stuart Russell",
+    isbn: "978-85-216-2936-0",
+    category: "Inteligência Artificial",
+    label: "white" as BookLabel,
+    status: "available" as BookStatus,
+  },
+  {
+    id: "11",
+    title: "Segurança de Computadores: Princípios e Práticas",
+    author: "William Stallings",
+    isbn: "978-85-4301-918-5",
+    category: "Segurança da Informação",
+    label: "white" as BookLabel,
+    status: "reserved" as BookStatus,
+  },
+  {
+    id: "12",
+    title: "Desenvolvimento Web com Django",
+    author: "Osvaldo Santana Neto",
+    isbn: "978-85-7522-566-0",
+    category: "Desenvolvimento Web",
+    label: "yellow" as BookLabel,
     status: "available" as BookStatus,
   },
 ];
@@ -89,14 +143,14 @@ export default function Books() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Book Catalog</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Catálogo de Livros</h1>
           <p className="text-muted-foreground">
-            Browse and manage library collection
+            Explore e gerencie o acervo da biblioteca
           </p>
         </div>
         <Button data-testid="button-add-book">
           <Plus className="h-4 w-4 mr-2" />
-          Add Book
+          Adicionar Livro
         </Button>
       </div>
 
@@ -104,7 +158,7 @@ export default function Books() {
         <div className="relative flex-1 min-w-[300px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by title, author, or ISBN..."
+            placeholder="Pesquisar por título, autor ou ISBN..."
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -114,38 +168,38 @@ export default function Books() {
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
             <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="available">Available</SelectItem>
-            <SelectItem value="on-loan">On Loan</SelectItem>
-            <SelectItem value="reserved">Reserved</SelectItem>
+            <SelectItem value="all">Todos os Estados</SelectItem>
+            <SelectItem value="available">Disponível</SelectItem>
+            <SelectItem value="on-loan">Emprestado</SelectItem>
+            <SelectItem value="reserved">Reservado</SelectItem>
           </SelectContent>
         </Select>
         <Select value={labelFilter} onValueChange={setLabelFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-label-filter">
+          <SelectTrigger className="w-[200px]" data-testid="select-label-filter">
             <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Label" />
+            <SelectValue placeholder="Etiqueta" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Labels</SelectItem>
-            <SelectItem value="white">5 Day Loan</SelectItem>
-            <SelectItem value="yellow">1 Day Loan</SelectItem>
-            <SelectItem value="red">Library Only</SelectItem>
+            <SelectItem value="all">Todas as Etiquetas</SelectItem>
+            <SelectItem value="white">Empréstimo 5 Dias</SelectItem>
+            <SelectItem value="yellow">Empréstimo 1 Dia</SelectItem>
+            <SelectItem value="red">Apenas Biblioteca</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="flex gap-2 flex-wrap">
         <Badge variant="outline" className="text-xs">
-          Total: {filteredBooks.length} books
+          Total: {filteredBooks.length} livros
         </Badge>
         <Badge variant="outline" className="text-xs">
-          Available: {filteredBooks.filter((b) => b.status === "available").length}
+          Disponíveis: {filteredBooks.filter((b) => b.status === "available").length}
         </Badge>
         <Badge variant="outline" className="text-xs">
-          On Loan: {filteredBooks.filter((b) => b.status === "on-loan").length}
+          Emprestados: {filteredBooks.filter((b) => b.status === "on-loan").length}
         </Badge>
       </div>
 
@@ -154,15 +208,15 @@ export default function Books() {
           <BookCard
             key={book.id}
             {...book}
-            onViewDetails={(id) => console.log("View details:", id)}
-            onLoan={(id) => console.log("Create loan:", id)}
+            onViewDetails={(id) => console.log("Ver detalhes:", id)}
+            onLoan={(id) => console.log("Criar empréstimo:", id)}
           />
         ))}
       </div>
 
       {filteredBooks.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No books found matching your criteria</p>
+          <p className="text-muted-foreground">Nenhum livro encontrado com os critérios selecionados</p>
         </div>
       )}
     </div>

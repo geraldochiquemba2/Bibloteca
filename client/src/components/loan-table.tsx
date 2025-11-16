@@ -29,9 +29,9 @@ interface LoanTableProps {
 }
 
 const statusConfig = {
-  active: { text: "Active", color: "bg-chart-2 text-white" },
-  overdue: { text: "Overdue", color: "bg-destructive text-destructive-foreground" },
-  returned: { text: "Returned", color: "bg-muted text-muted-foreground" },
+  active: { text: "Ativo", color: "bg-chart-2 text-white" },
+  overdue: { text: "Atrasado", color: "bg-destructive text-destructive-foreground" },
+  returned: { text: "Devolvido", color: "bg-muted text-muted-foreground" },
 };
 
 export function LoanTable({ loans, onReturn, onRenew, onViewUser }: LoanTableProps) {
@@ -45,20 +45,20 @@ export function LoanTable({ loans, onReturn, onRenew, onViewUser }: LoanTablePro
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>User</TableHead>
-            <TableHead>Book Title</TableHead>
-            <TableHead>Loan Date</TableHead>
-            <TableHead>Due Date</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Fine</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Utilizador</TableHead>
+            <TableHead>Título do Livro</TableHead>
+            <TableHead>Data de Empréstimo</TableHead>
+            <TableHead>Data de Devolução</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead>Multa</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {loans.length === 0 ? (
             <TableRow>
               <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                No loans found
+                Nenhum empréstimo encontrado
               </TableCell>
             </TableRow>
           ) : (
@@ -82,8 +82,8 @@ export function LoanTable({ loans, onReturn, onRenew, onViewUser }: LoanTablePro
                       {loan.status === "active" && (
                         <div className={`text-xs ${daysRemaining < 0 ? "text-destructive" : "text-muted-foreground"}`}>
                           {daysRemaining < 0
-                            ? `${Math.abs(daysRemaining)} days overdue`
-                            : `${daysRemaining} days left`}
+                            ? `${Math.abs(daysRemaining)} dias de atraso`
+                            : `${daysRemaining} dias restantes`}
                         </div>
                       )}
                     </div>
@@ -112,14 +112,14 @@ export function LoanTable({ loans, onReturn, onRenew, onViewUser }: LoanTablePro
                             onClick={() => onRenew?.(loan.id)}
                             data-testid={`button-renew-${loan.id}`}
                           >
-                            Renew
+                            Renovar
                           </Button>
                           <Button
                             size="sm"
                             onClick={() => onReturn?.(loan.id)}
                             data-testid={`button-return-${loan.id}`}
                           >
-                            Return
+                            Devolver
                           </Button>
                         </>
                       )}
@@ -129,7 +129,7 @@ export function LoanTable({ loans, onReturn, onRenew, onViewUser }: LoanTablePro
                         onClick={() => onViewUser?.(loan.id)}
                         data-testid={`button-view-user-${loan.id}`}
                       >
-                        View User
+                        Ver Utilizador
                       </Button>
                     </div>
                   </TableCell>

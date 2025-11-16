@@ -19,15 +19,15 @@ interface BookCardProps {
 }
 
 const labelConfig = {
-  red: { text: "Library Only", color: "bg-destructive text-destructive-foreground" },
-  yellow: { text: "1 Day Loan", color: "bg-yellow-500 text-white" },
-  white: { text: "5 Day Loan", color: "bg-muted text-muted-foreground" },
+  red: { text: "Apenas Biblioteca", color: "bg-destructive text-destructive-foreground" },
+  yellow: { text: "Empréstimo 1 Dia", color: "bg-yellow-500 text-white" },
+  white: { text: "Empréstimo 5 Dias", color: "bg-muted text-muted-foreground" },
 };
 
 const statusConfig = {
-  available: { text: "Available", color: "bg-chart-2 text-white" },
-  "on-loan": { text: "On Loan", color: "bg-chart-3 text-white" },
-  reserved: { text: "Reserved", color: "bg-chart-1 text-white" },
+  available: { text: "Disponível", color: "bg-chart-2 text-white" },
+  "on-loan": { text: "Emprestado", color: "bg-chart-3 text-white" },
+  reserved: { text: "Reservado", color: "bg-chart-1 text-white" },
 };
 
 export function BookCard({
@@ -61,13 +61,13 @@ export function BookCard({
       <CardContent className="flex-1 pb-3">
         <div className="space-y-1 text-sm">
           <p className="text-muted-foreground">
-            <span className="font-medium">Author:</span> {author}
+            <span className="font-medium">Autor:</span> {author}
           </p>
           <p className="text-muted-foreground">
             <span className="font-medium">ISBN:</span> {isbn}
           </p>
           <p className="text-muted-foreground">
-            <span className="font-medium">Category:</span> {category}
+            <span className="font-medium">Categoria:</span> {category}
           </p>
         </div>
         <div className="mt-3">
@@ -85,7 +85,7 @@ export function BookCard({
           data-testid={`button-view-${id}`}
         >
           <Eye className="h-4 w-4 mr-1" />
-          View
+          Ver
         </Button>
         {status === "available" && label !== "red" && (
           <Button
@@ -94,7 +94,7 @@ export function BookCard({
             onClick={() => onLoan?.(id)}
             data-testid={`button-loan-${id}`}
           >
-            Loan
+            Emprestar
           </Button>
         )}
       </CardFooter>

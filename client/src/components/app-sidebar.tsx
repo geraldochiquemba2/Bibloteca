@@ -21,32 +21,32 @@ import { Link, useLocation } from "wouter";
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: "Painel Principal",
     url: "/",
     icon: LayoutDashboard,
   },
   {
-    title: "Book Catalog",
+    title: "Catálogo de Livros",
     url: "/books",
     icon: BookOpen,
   },
   {
-    title: "Loan Management",
+    title: "Gestão de Empréstimos",
     url: "/loans",
     icon: BookCopy,
   },
   {
-    title: "Users",
+    title: "Utilizadores",
     url: "/users",
     icon: Users,
   },
   {
-    title: "Fines",
+    title: "Multas",
     url: "/fines",
     icon: AlertCircle,
   },
   {
-    title: "Reports",
+    title: "Relatórios",
     url: "/reports",
     icon: FileText,
   },
@@ -63,14 +63,14 @@ export function AppSidebar() {
             <BookOpen className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold">ISPTEC Library</h2>
-            <p className="text-xs text-muted-foreground">Management System</p>
+            <h2 className="text-sm font-semibold">Biblioteca ISPTEC</h2>
+            <p className="text-xs text-muted-foreground">Sistema de Gestão</p>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => (

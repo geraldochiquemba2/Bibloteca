@@ -24,8 +24,8 @@ import {
 const mockUsers = [
   {
     id: "1",
-    name: "Maria Silva",
-    email: "maria.silva@isptec.ao",
+    name: "Maria Nzinga",
+    email: "maria.nzinga@isptec.ao",
     type: "estudante" as const,
     currentLoans: 2,
     fines: 0,
@@ -33,8 +33,8 @@ const mockUsers = [
   },
   {
     id: "2",
-    name: "João Costa",
-    email: "joao.costa@isptec.ao",
+    name: "Prof. António Cassoma",
+    email: "antonio.cassoma@isptec.ao",
     type: "docente" as const,
     currentLoans: 3,
     fines: 0,
@@ -42,8 +42,8 @@ const mockUsers = [
   },
   {
     id: "3",
-    name: "Ana Pereira",
-    email: "ana.pereira@isptec.ao",
+    name: "Ana Kiluange",
+    email: "ana.kiluange@isptec.ao",
     type: "estudante" as const,
     currentLoans: 1,
     fines: 2500,
@@ -51,8 +51,8 @@ const mockUsers = [
   },
   {
     id: "4",
-    name: "Carlos Lima",
-    email: "carlos.lima@isptec.ao",
+    name: "Carlos Mateus",
+    email: "carlos.mateus@isptec.ao",
     type: "funcionario" as const,
     currentLoans: 1,
     fines: 0,
@@ -60,24 +60,51 @@ const mockUsers = [
   },
   {
     id: "5",
-    name: "Pedro Santos",
-    email: "pedro.santos@isptec.ao",
+    name: "Pedro Sakaita",
+    email: "pedro.sakaita@isptec.ao",
     type: "estudante" as const,
     currentLoans: 0,
     fines: 1500,
     status: "active" as const,
   },
+  {
+    id: "6",
+    name: "Prof. Sara Fernandes",
+    email: "sara.fernandes@isptec.ao",
+    type: "docente" as const,
+    currentLoans: 4,
+    fines: 0,
+    status: "active" as const,
+  },
+  {
+    id: "7",
+    name: "João Domingos",
+    email: "joao.domingos@isptec.ao",
+    type: "estudante" as const,
+    currentLoans: 1,
+    fines: 0,
+    status: "active" as const,
+  },
+  {
+    id: "8",
+    name: "Luísa Mendes",
+    email: "luisa.mendes@isptec.ao",
+    type: "funcionario" as const,
+    currentLoans: 2,
+    fines: 500,
+    status: "active" as const,
+  },
 ];
 
 const userTypeConfig = {
-  docente: { text: "Docente", limit: "4 books, 15 days" },
-  estudante: { text: "Estudante", limit: "2 books, 5 days" },
-  funcionario: { text: "Funcionário", limit: "2 books, 5 days" },
+  docente: { text: "Docente", limit: "4 livros, 15 dias" },
+  estudante: { text: "Estudante", limit: "2 livros, 5 dias" },
+  funcionario: { text: "Funcionário", limit: "2 livros, 5 dias" },
 };
 
 const statusConfig = {
-  active: { text: "Active", color: "bg-chart-2 text-white" },
-  blocked: { text: "Blocked", color: "bg-destructive text-destructive-foreground" },
+  active: { text: "Ativo", color: "bg-chart-2 text-white" },
+  blocked: { text: "Bloqueado", color: "bg-destructive text-destructive-foreground" },
 };
 
 export default function Users() {
@@ -96,14 +123,14 @@ export default function Users() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Utilizadores</h1>
           <p className="text-muted-foreground">
-            Manage library users and their access
+            Gerencie os utilizadores da biblioteca e seus acessos
           </p>
         </div>
         <Button data-testid="button-add-user">
           <Plus className="h-4 w-4 mr-2" />
-          Add User
+          Adicionar Utilizador
         </Button>
       </div>
 
@@ -111,7 +138,7 @@ export default function Users() {
         <div className="relative flex-1 min-w-[300px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by name or email..."
+            placeholder="Pesquisar por nome ou email..."
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -120,10 +147,10 @@ export default function Users() {
         </div>
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-[180px]" data-testid="select-user-type">
-            <SelectValue placeholder="User Type" />
+            <SelectValue placeholder="Tipo de Utilizador" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="all">Todos os Tipos</SelectItem>
             <SelectItem value="docente">Docente</SelectItem>
             <SelectItem value="estudante">Estudante</SelectItem>
             <SelectItem value="funcionario">Funcionário</SelectItem>
@@ -135,19 +162,19 @@ export default function Users() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Current Loans</TableHead>
-              <TableHead>Fines</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Utilizador</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Empréstimos Atuais</TableHead>
+              <TableHead>Multas</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No users found
+                  Nenhum utilizador encontrado
                 </TableCell>
               </TableRow>
             ) : (
@@ -197,11 +224,11 @@ export default function Users() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => console.log("View user:", user.id)}
+                      onClick={() => console.log("Ver utilizador:", user.id)}
                       data-testid={`button-view-${user.id}`}
                     >
                       <Eye className="h-4 w-4 mr-1" />
-                      View
+                      Ver
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -10,73 +10,110 @@ import { addDays, subDays } from "date-fns";
 const mockActiveLoans: Loan[] = [
   {
     id: "1",
-    userName: "Maria Silva",
+    userName: "Maria Nzinga",
     userType: "estudante",
-    bookTitle: "Engenharia de Software",
+    bookTitle: "Introdução à Programação em Python",
     loanDate: subDays(new Date(), 3),
     dueDate: addDays(new Date(), 2),
     status: "active",
   },
   {
     id: "2",
-    userName: "João Costa",
+    userName: "Prof. António Cassoma",
     userType: "docente",
-    bookTitle: "Algoritmos e Estruturas de Dados",
-    loanDate: subDays(new Date(), 10),
-    dueDate: addDays(new Date(), 5),
+    bookTitle: "Estruturas de Dados e Algoritmos",
+    loanDate: subDays(new Date(), 8),
+    dueDate: addDays(new Date(), 7),
     status: "active",
   },
   {
     id: "3",
-    userName: "Carlos Lima",
+    userName: "Carlos Mateus",
     userType: "funcionario",
-    bookTitle: "Redes de Computadores",
+    bookTitle: "Redes de Computadores - 5ª Edição",
     loanDate: subDays(new Date(), 1),
     dueDate: addDays(new Date(), 4),
+    status: "active",
+  },
+  {
+    id: "4",
+    userName: "João Domingos",
+    userType: "estudante",
+    bookTitle: "Sistemas Operacionais Modernos",
+    loanDate: subDays(new Date(), 2),
+    dueDate: addDays(new Date(), 3),
+    status: "active",
+  },
+  {
+    id: "5",
+    userName: "Prof. Sara Fernandes",
+    userType: "docente",
+    bookTitle: "Fundamentos de Engenharia de Software",
+    loanDate: subDays(new Date(), 5),
+    dueDate: addDays(new Date(), 10),
     status: "active",
   },
 ];
 
 const mockOverdueLoans: Loan[] = [
   {
-    id: "4",
-    userName: "Ana Pereira",
+    id: "6",
+    userName: "Ana Kiluange",
     userType: "estudante",
-    bookTitle: "Sistemas Operacionais",
-    loanDate: subDays(new Date(), 8),
+    bookTitle: "Banco de Dados: Conceitos e Projeto",
+    loanDate: subDays(new Date(), 7),
+    dueDate: subDays(new Date(), 1),
+    status: "overdue",
+    fine: 500,
+  },
+  {
+    id: "7",
+    userName: "Pedro Sakaita",
+    userType: "estudante",
+    bookTitle: "Segurança de Computadores",
+    loanDate: subDays(new Date(), 12),
+    dueDate: subDays(new Date(), 4),
+    status: "overdue",
+    fine: 2000,
+  },
+  {
+    id: "8",
+    userName: "Luísa Mendes",
+    userType: "funcionario",
+    bookTitle: "Inteligência Artificial Moderna",
+    loanDate: subDays(new Date(), 9),
     dueDate: subDays(new Date(), 2),
     status: "overdue",
     fine: 1000,
-  },
-  {
-    id: "5",
-    userName: "Pedro Santos",
-    userType: "estudante",
-    bookTitle: "Banco de Dados",
-    loanDate: subDays(new Date(), 12),
-    dueDate: subDays(new Date(), 5),
-    status: "overdue",
-    fine: 2500,
   },
 ];
 
 const mockReturnedLoans: Loan[] = [
   {
-    id: "6",
-    userName: "Sofia Martins",
+    id: "9",
+    userName: "Prof. Miguel Santos",
     userType: "docente",
     bookTitle: "Arquitetura de Computadores",
-    loanDate: subDays(new Date(), 20),
-    dueDate: subDays(new Date(), 5),
+    loanDate: subDays(new Date(), 18),
+    dueDate: subDays(new Date(), 3),
     status: "returned",
   },
   {
-    id: "7",
-    userName: "Miguel Oliveira",
+    id: "10",
+    userName: "Teresa Costa",
     userType: "estudante",
-    bookTitle: "Compiladores",
-    loanDate: subDays(new Date(), 15),
-    dueDate: subDays(new Date(), 10),
+    bookTitle: "Compiladores: Princípios e Práticas",
+    loanDate: subDays(new Date(), 14),
+    dueDate: subDays(new Date(), 9),
+    status: "returned",
+  },
+  {
+    id: "11",
+    userName: "Roberto Silva",
+    userType: "estudante",
+    bookTitle: "Desenvolvimento Web com Django",
+    loanDate: subDays(new Date(), 10),
+    dueDate: subDays(new Date(), 5),
     status: "returned",
   },
 ];
@@ -95,19 +132,19 @@ export default function Loans() {
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Loan Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Empréstimos</h1>
           <p className="text-muted-foreground">
-            Track and manage book loans and returns
+            Acompanhe e gerencie os empréstimos e devoluções de livros
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" data-testid="button-scan-barcode">
             <Scan className="h-4 w-4 mr-2" />
-            Scan Barcode
+            Digitalizar Código
           </Button>
           <Button data-testid="button-new-loan">
             <Plus className="h-4 w-4 mr-2" />
-            New Loan
+            Novo Empréstimo
           </Button>
         </div>
       </div>
@@ -115,7 +152,7 @@ export default function Loans() {
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search by user or book title..."
+          placeholder="Pesquisar por utilizador ou título do livro..."
           className="pl-9"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -126,38 +163,38 @@ export default function Loans() {
       <Tabs defaultValue="active" className="space-y-4">
         <TabsList>
           <TabsTrigger value="active" data-testid="tab-active-loans">
-            Active Loans ({mockActiveLoans.length})
+            Empréstimos Ativos ({mockActiveLoans.length})
           </TabsTrigger>
           <TabsTrigger value="overdue" data-testid="tab-overdue-loans">
-            Overdue ({mockOverdueLoans.length})
+            Atrasados ({mockOverdueLoans.length})
           </TabsTrigger>
           <TabsTrigger value="returned" data-testid="tab-returned-loans">
-            Returned ({mockReturnedLoans.length})
+            Devolvidos ({mockReturnedLoans.length})
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
           <LoanTable
             loans={filterLoans(mockActiveLoans)}
-            onReturn={(id) => console.log("Return loan:", id)}
-            onRenew={(id) => console.log("Renew loan:", id)}
-            onViewUser={(id) => console.log("View user:", id)}
+            onReturn={(id) => console.log("Devolver empréstimo:", id)}
+            onRenew={(id) => console.log("Renovar empréstimo:", id)}
+            onViewUser={(id) => console.log("Ver utilizador:", id)}
           />
         </TabsContent>
 
         <TabsContent value="overdue" className="space-y-4">
           <LoanTable
             loans={filterLoans(mockOverdueLoans)}
-            onReturn={(id) => console.log("Return loan:", id)}
-            onRenew={(id) => console.log("Renew loan:", id)}
-            onViewUser={(id) => console.log("View user:", id)}
+            onReturn={(id) => console.log("Devolver empréstimo:", id)}
+            onRenew={(id) => console.log("Renovar empréstimo:", id)}
+            onViewUser={(id) => console.log("Ver utilizador:", id)}
           />
         </TabsContent>
 
         <TabsContent value="returned" className="space-y-4">
           <LoanTable
             loans={filterLoans(mockReturnedLoans)}
-            onViewUser={(id) => console.log("View user:", id)}
+            onViewUser={(id) => console.log("Ver utilizador:", id)}
           />
         </TabsContent>
       </Tabs>
