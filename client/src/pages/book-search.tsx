@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, BookOpen, LogOut, Calendar, MapPin } from "lucide-react";
+import { Search, BookOpen, LogOut, Calendar, MapPin, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 export default function BookSearch() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -97,9 +99,19 @@ export default function BookSearch() {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold" data-testid="text-page-title">Buscar Livros</h1>
-            <p className="text-sm text-muted-foreground">Bem-vindo, {user?.name}</p>
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => window.history.back()}
+              data-testid="button-back"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold" data-testid="text-page-title">Buscar Livros</h1>
+              <p className="text-sm text-muted-foreground">Bem-vindo, {user?.name}</p>
+            </div>
           </div>
           <Button variant="outline" onClick={logout} data-testid="button-logout">
             <LogOut className="h-4 w-4 mr-2" />
