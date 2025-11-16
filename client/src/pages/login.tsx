@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
@@ -14,6 +16,13 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  
+  const [registerName, setRegisterName] = useState("");
+  const [registerEmail, setRegisterEmail] = useState("");
+  const [registerUsername, setRegisterUsername] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+  const [registerUserType, setRegisterUserType] = useState<"student" | "teacher" | "staff">("student");
+  
   const { toast } = useToast();
 
   const loginMutation = useMutation({
@@ -40,6 +49,39 @@ export default function Login() {
     },
   });
 
+  const registerMutation = useMutation({
+    mutationFn: async (userData: { 
+      name: string; 
+      username: string; 
+      email: string; 
+      password: string; 
+      userType: string;
+    }) => {
+      return apiRequest("/api/users", {
+        method: "POST",
+        body: JSON.stringify(userData),
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Agora você pode fazer login com suas credenciais",
+      });
+      setRegisterName("");
+      setRegisterEmail("");
+      setRegisterUsername("");
+      setRegisterPassword("");
+      setRegisterUserType("student");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro no cadastro",
+        description: error.message || "Não foi possível criar a conta",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -53,6 +95,36 @@ export default function Login() {
     }
 
     loginMutation.mutate({ username, password });
+  };
+
+  const handleRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!registerName || !registerUsername || !registerEmail || !registerPassword) {
+      toast({
+        title: "Erro no cadastro",
+        description: "Por favor, preencha todos os campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (registerPassword.length < 6) {
+      toast({
+        title: "Erro no cadastro",
+        description: "A senha deve ter pelo menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    registerMutation.mutate({
+      name: registerName,
+      username: registerUsername,
+      email: registerEmail,
+      password: registerPassword,
+      userType: registerUserType,
+    });
   };
 
   return (
@@ -92,50 +164,137 @@ export default function Login() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Iniciar Sessão</CardTitle>
+            <CardTitle>Bem-vindo</CardTitle>
             <CardDescription>
-              Entre com suas credenciais para acessar o sistema
+              Entre com sua conta ou crie uma nova
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Nome de Utilizador</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="admin"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  data-testid="input-username"
-                  disabled={loginMutation.isPending}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  data-testid="input-password"
-                  disabled={loginMutation.isPending}
-                />
-              </div>
-              <Button 
-                type="submit" 
-                className="w-full" 
-                data-testid="button-login"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? "Entrando..." : "Entrar"}
-              </Button>
-            </form>
-            <div className="mt-4 text-sm text-muted-foreground text-center">
-              <p>Credenciais padrão:</p>
-              <p className="font-mono">admin / admin123</p>
-            </div>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login" data-testid="tab-login">Login</TabsTrigger>
+                <TabsTrigger value="register" data-testid="tab-register">Cadastro</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="login" className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Nome de Utilizador</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      placeholder="admin"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      data-testid="input-login-username"
+                      disabled={loginMutation.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      data-testid="input-login-password"
+                      disabled={loginMutation.isPending}
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    data-testid="button-login"
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                  </Button>
+                </form>
+                <div className="mt-4 text-sm text-muted-foreground text-center">
+                  <p>Credenciais padrão:</p>
+                  <p className="font-mono">admin / admin123</p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="register" className="space-y-4">
+                <form onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="register-name">Nome Completo</Label>
+                    <Input
+                      id="register-name"
+                      type="text"
+                      placeholder="João Silva"
+                      value={registerName}
+                      onChange={(e) => setRegisterName(e.target.value)}
+                      data-testid="input-register-name"
+                      disabled={registerMutation.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-email">Email</Label>
+                    <Input
+                      id="register-email"
+                      type="email"
+                      placeholder="joao.silva@isptec.co.ao"
+                      value={registerEmail}
+                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      data-testid="input-register-email"
+                      disabled={registerMutation.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-username">Nome de Utilizador</Label>
+                    <Input
+                      id="register-username"
+                      type="text"
+                      placeholder="joaosilva"
+                      value={registerUsername}
+                      onChange={(e) => setRegisterUsername(e.target.value)}
+                      data-testid="input-register-username"
+                      disabled={registerMutation.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Senha</Label>
+                    <Input
+                      id="register-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={registerPassword}
+                      onChange={(e) => setRegisterPassword(e.target.value)}
+                      data-testid="input-register-password"
+                      disabled={registerMutation.isPending}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-type">Tipo de Utilizador</Label>
+                    <Select 
+                      value={registerUserType} 
+                      onValueChange={(value: "student" | "teacher" | "staff") => setRegisterUserType(value)}
+                      disabled={registerMutation.isPending}
+                    >
+                      <SelectTrigger data-testid="select-register-type">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Estudante</SelectItem>
+                        <SelectItem value="teacher">Docente</SelectItem>
+                        <SelectItem value="staff">Funcionário</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    data-testid="button-register"
+                    disabled={registerMutation.isPending}
+                  >
+                    {registerMutation.isPending ? "Criando conta..." : "Criar Conta"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
 
