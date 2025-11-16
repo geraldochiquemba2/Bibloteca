@@ -81,10 +81,10 @@ export class MemStorage implements IStorage {
     const adminId = randomUUID();
     this.users.set(adminId, {
       id: adminId,
-      username: "admin",
+      username: "admin@isptec.co.ao",
       password: "admin123",
       name: "Administrador",
-      email: "admin@isptec.ao",
+      email: "admin@isptec.co.ao",
       userType: "admin" as const,
       isActive: true,
       createdAt: new Date(),
