@@ -712,6 +712,203 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Loan Requests
+  app.get("/api/loan-requests", async (req, res) => {
+    try {
+      const { userId, status } = req.query;
+      let requests;
+      
+      if (userId && typeof userId === "string") {
+        requests = await storage.getLoanRequestsByUser(userId);
+      } else if (status && typeof status === "string") {
+        requests = await storage.getLoanRequestsByStatus(status);
+      } else {
+        requests = await storage.getAllLoanRequests();
+      }
+      
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar solicitações" });
+    }
+  });
+
+  app.post("/api/loan-requests", async (req, res) => {
+    try {
+      const { userId, bookId } = req.body;
+      
+      const request = await storage.createLoanRequest({
+        userId,
+        bookId,
+        status: "pending",
+        reviewedBy: null,
+        reviewDate: null,
+        notes: null,
+      });
+      
+      res.status(201).json(request);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Erro ao criar solicitação" });
+    }
+  });
+
+  app.post("/api/loan-requests/:id/approve", async (req, res) => {
+    try {
+      const request = await storage.getLoanRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ message: "Solicitação não encontrada" });
+      }
+
+      const user = await storage.getUser(request.userId);
+      const book = await storage.getBook(request.bookId);
+      
+      if (!user || !book) {
+        return res.status(404).json({ message: "Utilizador ou livro não encontrado" });
+      }
+
+      const dueDate = calculateDueDate(user.userType, book.tag);
+
+      const loan = await storage.createLoan({
+        userId: request.userId,
+        bookId: request.bookId,
+        dueDate,
+        status: "active",
+        returnDate: null,
+        renewalCount: 0,
+      });
+
+      await storage.updateBook(request.bookId, {
+        availableCopies: book.availableCopies - 1,
+      });
+
+      await storage.updateLoanRequest(request.id, {
+        status: "approved",
+        reviewedBy: req.body.reviewedBy,
+        reviewDate: new Date(),
+      });
+
+      res.json({ message: "Solicitação aprovada", loan });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Erro ao aprovar solicitação" });
+    }
+  });
+
+  app.post("/api/loan-requests/:id/reject", async (req, res) => {
+    try {
+      const request = await storage.getLoanRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ message: "Solicitação não encontrada" });
+      }
+
+      await storage.updateLoanRequest(request.id, {
+        status: "rejected",
+        reviewedBy: req.body.reviewedBy,
+        reviewDate: new Date(),
+        notes: req.body.notes || null,
+      });
+
+      res.json({ message: "Solicitação rejeitada" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao rejeitar solicitação" });
+    }
+  });
+
+  // Renewal Requests
+  app.get("/api/renewal-requests", async (req, res) => {
+    try {
+      const { userId, status } = req.query;
+      let requests;
+      
+      if (userId && typeof userId === "string") {
+        requests = await storage.getRenewalRequestsByUser(userId);
+      } else if (status && typeof status === "string") {
+        requests = await storage.getRenewalRequestsByStatus(status);
+      } else {
+        requests = await storage.getAllRenewalRequests();
+      }
+      
+      res.json(requests);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao buscar solicitações de renovação" });
+    }
+  });
+
+  app.post("/api/renewal-requests", async (req, res) => {
+    try {
+      const { loanId, userId } = req.body;
+      
+      const request = await storage.createRenewalRequest({
+        loanId,
+        userId,
+        status: "pending",
+        reviewedBy: null,
+        reviewDate: null,
+        notes: null,
+      });
+      
+      res.status(201).json(request);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Erro ao criar solicitação de renovação" });
+    }
+  });
+
+  app.post("/api/renewal-requests/:id/approve", async (req, res) => {
+    try {
+      const request = await storage.getRenewalRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ message: "Solicitação não encontrada" });
+      }
+
+      const loan = await storage.getLoan(request.loanId);
+      if (!loan) {
+        return res.status(404).json({ message: "Empréstimo não encontrado" });
+      }
+
+      const user = await storage.getUser(loan.userId);
+      const book = await storage.getBook(loan.bookId);
+      
+      if (!user || !book) {
+        return res.status(404).json({ message: "Utilizador ou livro não encontrado" });
+      }
+
+      const newDueDate = calculateDueDate(user.userType, book.tag);
+
+      await storage.updateLoan(loan.id, {
+        dueDate: newDueDate,
+        renewalCount: loan.renewalCount + 1,
+      });
+
+      await storage.updateRenewalRequest(request.id, {
+        status: "approved",
+        reviewedBy: req.body.reviewedBy,
+        reviewDate: new Date(),
+      });
+
+      res.json({ message: "Renovação aprovada", newDueDate });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message || "Erro ao aprovar renovação" });
+    }
+  });
+
+  app.post("/api/renewal-requests/:id/reject", async (req, res) => {
+    try {
+      const request = await storage.getRenewalRequest(req.params.id);
+      if (!request) {
+        return res.status(404).json({ message: "Solicitação não encontrada" });
+      }
+
+      await storage.updateRenewalRequest(request.id, {
+        status: "rejected",
+        reviewedBy: req.body.reviewedBy,
+        reviewDate: new Date(),
+        notes: req.body.notes || null,
+      });
+
+      res.json({ message: "Renovação rejeitada" });
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao rejeitar renovação" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

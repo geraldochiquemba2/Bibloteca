@@ -2,8 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Calendar, AlertCircle, LogOut, Search } from "lucide-react";
+import { BookOpen, Calendar, AlertCircle, LogOut, Search, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { differenceInDays, differenceInHours, differenceInMinutes, isPast } from "date-fns";
+import { useEffect, useState } from "react";
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
@@ -30,6 +32,50 @@ export default function StudentDashboard() {
   const totalFines = pendingFines.reduce((sum: number, f: any) => sum + parseFloat(f.amount), 0);
 
   const isLoading = loansLoading || finesLoading;
+
+  const [timeLeft, setTimeLeft] = useState<string>("");
+
+  const getNextDueDate = () => {
+    if (activeLoans.length === 0) return null;
+    const sorted = activeLoans.sort((a: any, b: any) => 
+      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+    );
+    return sorted[0]?.dueDate;
+  };
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const nextDue = getNextDueDate();
+      if (!nextDue) {
+        setTimeLeft("Sem empréstimos");
+        return;
+      }
+
+      const dueDate = new Date(nextDue);
+      const now = new Date();
+      
+      if (isPast(dueDate)) {
+        setTimeLeft("Atrasado!");
+        return;
+      }
+
+      const days = differenceInDays(dueDate, now);
+      const hours = differenceInHours(dueDate, now) % 24;
+      const minutes = differenceInMinutes(dueDate, now) % 60;
+
+      if (days > 0) {
+        setTimeLeft(`${days}d ${hours}h`);
+      } else if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m`);
+      } else {
+        setTimeLeft(`${minutes}m`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 60000);
+    return () => clearInterval(interval);
+  }, [activeLoans]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,13 +125,15 @@ export default function StudentDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Prazo de Empréstimo</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Próximo Vencimento</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">5 dias</div>
+              <div className={`text-2xl font-bold ${timeLeft === "Atrasado!" ? "text-destructive" : ""}`} data-testid="text-time-left">
+                {timeLeft || "Calculando..."}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Livros com etiqueta cor branca
+                {activeLoans.length > 0 ? "Tempo restante para devolução" : "Nenhum empréstimo ativo"}
               </p>
             </CardContent>
           </Card>

@@ -10,6 +10,7 @@ export const departmentEnum = pgEnum("department", ["engenharia", "ciencias-soci
 export const loanStatusEnum = pgEnum("loan_status", ["active", "returned", "overdue"]);
 export const reservationStatusEnum = pgEnum("reservation_status", ["pending", "notified", "completed", "cancelled"]);
 export const fineStatusEnum = pgEnum("fine_status", ["pending", "paid"]);
+export const requestStatusEnum = pgEnum("request_status", ["pending", "approved", "rejected"]);
 
 // Users table
 export const users = pgTable("users", {
@@ -85,6 +86,32 @@ export const fines = pgTable("fines", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Loan Requests table
+export const loanRequests = pgTable("loan_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  bookId: varchar("book_id").notNull().references(() => books.id),
+  status: requestStatusEnum("status").notNull().default("pending"),
+  requestDate: timestamp("request_date").notNull().defaultNow(),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewDate: timestamp("review_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Renewal Requests table
+export const renewalRequests = pgTable("renewal_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  loanId: varchar("loan_id").notNull().references(() => loans.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  status: requestStatusEnum("status").notNull().default("pending"),
+  requestDate: timestamp("request_date").notNull().defaultNow(),
+  reviewedBy: varchar("reviewed_by").references(() => users.id),
+  reviewDate: timestamp("review_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -117,6 +144,18 @@ export const insertFineSchema = createInsertSchema(fines).omit({
   createdAt: true,
 });
 
+export const insertLoanRequestSchema = createInsertSchema(loanRequests).omit({
+  id: true,
+  requestDate: true,
+  createdAt: true,
+});
+
+export const insertRenewalRequestSchema = createInsertSchema(renewalRequests).omit({
+  id: true,
+  requestDate: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -135,3 +174,9 @@ export type InsertReservation = z.infer<typeof insertReservationSchema>;
 
 export type Fine = typeof fines.$inferSelect;
 export type InsertFine = z.infer<typeof insertFineSchema>;
+
+export type LoanRequest = typeof loanRequests.$inferSelect;
+export type InsertLoanRequest = z.infer<typeof insertLoanRequestSchema>;
+
+export type RenewalRequest = typeof renewalRequests.$inferSelect;
+export type InsertRenewalRequest = z.infer<typeof insertRenewalRequestSchema>;

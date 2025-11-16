@@ -46,14 +46,14 @@ export default function StudentLoans() {
       const response = await apiRequest("POST", `/api/loans/${loanId}/renew`, {});
       return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Empréstimo renovado!",
         description: "O prazo de devolução foi estendido com sucesso.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/loans/user", user?.id] });
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
         title: "Erro ao renovar",
         description: error.message || "Não foi possível renovar o empréstimo.",

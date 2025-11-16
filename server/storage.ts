@@ -10,7 +10,11 @@ import {
   type Fine,
   type InsertFine,
   type Category,
-  type InsertCategory
+  type InsertCategory,
+  type LoanRequest,
+  type InsertLoanRequest,
+  type RenewalRequest,
+  type InsertRenewalRequest
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -59,6 +63,22 @@ export interface IStorage {
   getFinesByUser(userId: string): Promise<Fine[]>;
   createFine(fine: InsertFine): Promise<Fine>;
   updateFine(id: string, fine: Partial<InsertFine>): Promise<Fine | undefined>;
+  
+  // Loan Request methods
+  getLoanRequest(id: string): Promise<LoanRequest | undefined>;
+  getAllLoanRequests(): Promise<LoanRequest[]>;
+  getLoanRequestsByUser(userId: string): Promise<LoanRequest[]>;
+  getLoanRequestsByStatus(status: string): Promise<LoanRequest[]>;
+  createLoanRequest(loanRequest: InsertLoanRequest): Promise<LoanRequest>;
+  updateLoanRequest(id: string, loanRequest: Partial<InsertLoanRequest>): Promise<LoanRequest | undefined>;
+  
+  // Renewal Request methods
+  getRenewalRequest(id: string): Promise<RenewalRequest | undefined>;
+  getAllRenewalRequests(): Promise<RenewalRequest[]>;
+  getRenewalRequestsByUser(userId: string): Promise<RenewalRequest[]>;
+  getRenewalRequestsByStatus(status: string): Promise<RenewalRequest[]>;
+  createRenewalRequest(renewalRequest: InsertRenewalRequest): Promise<RenewalRequest>;
+  updateRenewalRequest(id: string, renewalRequest: Partial<InsertRenewalRequest>): Promise<RenewalRequest | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -68,6 +88,8 @@ export class MemStorage implements IStorage {
   private loans: Map<string, Loan>;
   private reservations: Map<string, Reservation>;
   private fines: Map<string, Fine>;
+  private loanRequests: Map<string, LoanRequest>;
+  private renewalRequests: Map<string, RenewalRequest>;
 
   constructor() {
     this.users = new Map();
@@ -76,6 +98,8 @@ export class MemStorage implements IStorage {
     this.loans = new Map();
     this.reservations = new Map();
     this.fines = new Map();
+    this.loanRequests = new Map();
+    this.renewalRequests = new Map();
     
     // Initialize with default admin user
     const adminId = randomUUID();
@@ -363,6 +387,100 @@ export class MemStorage implements IStorage {
     const updatedFine = { ...fine, ...fineData };
     this.fines.set(id, updatedFine);
     return updatedFine;
+  }
+
+  // Loan Request methods
+  async getLoanRequest(id: string): Promise<LoanRequest | undefined> {
+    return this.loanRequests.get(id);
+  }
+
+  async getAllLoanRequests(): Promise<LoanRequest[]> {
+    return Array.from(this.loanRequests.values());
+  }
+
+  async getLoanRequestsByUser(userId: string): Promise<LoanRequest[]> {
+    return Array.from(this.loanRequests.values()).filter(
+      (request) => request.userId === userId,
+    );
+  }
+
+  async getLoanRequestsByStatus(status: string): Promise<LoanRequest[]> {
+    return Array.from(this.loanRequests.values()).filter(
+      (request) => request.status === status,
+    );
+  }
+
+  async createLoanRequest(insertLoanRequest: InsertLoanRequest): Promise<LoanRequest> {
+    const id = randomUUID();
+    const loanRequest: LoanRequest = {
+      id,
+      userId: insertLoanRequest.userId,
+      bookId: insertLoanRequest.bookId,
+      status: insertLoanRequest.status ?? "pending",
+      reviewedBy: insertLoanRequest.reviewedBy ?? null,
+      reviewDate: insertLoanRequest.reviewDate ?? null,
+      notes: insertLoanRequest.notes ?? null,
+      requestDate: new Date(),
+      createdAt: new Date(),
+    };
+    this.loanRequests.set(id, loanRequest);
+    return loanRequest;
+  }
+
+  async updateLoanRequest(id: string, loanRequestData: Partial<InsertLoanRequest>): Promise<LoanRequest | undefined> {
+    const loanRequest = this.loanRequests.get(id);
+    if (!loanRequest) return undefined;
+    
+    const updatedLoanRequest = { ...loanRequest, ...loanRequestData };
+    this.loanRequests.set(id, updatedLoanRequest);
+    return updatedLoanRequest;
+  }
+
+  // Renewal Request methods
+  async getRenewalRequest(id: string): Promise<RenewalRequest | undefined> {
+    return this.renewalRequests.get(id);
+  }
+
+  async getAllRenewalRequests(): Promise<RenewalRequest[]> {
+    return Array.from(this.renewalRequests.values());
+  }
+
+  async getRenewalRequestsByUser(userId: string): Promise<RenewalRequest[]> {
+    return Array.from(this.renewalRequests.values()).filter(
+      (request) => request.userId === userId,
+    );
+  }
+
+  async getRenewalRequestsByStatus(status: string): Promise<RenewalRequest[]> {
+    return Array.from(this.renewalRequests.values()).filter(
+      (request) => request.status === status,
+    );
+  }
+
+  async createRenewalRequest(insertRenewalRequest: InsertRenewalRequest): Promise<RenewalRequest> {
+    const id = randomUUID();
+    const renewalRequest: RenewalRequest = {
+      id,
+      loanId: insertRenewalRequest.loanId,
+      userId: insertRenewalRequest.userId,
+      status: insertRenewalRequest.status ?? "pending",
+      reviewedBy: insertRenewalRequest.reviewedBy ?? null,
+      reviewDate: insertRenewalRequest.reviewDate ?? null,
+      notes: insertRenewalRequest.notes ?? null,
+      requestDate: new Date(),
+      createdAt: new Date(),
+    };
+    this.renewalRequests.set(id, renewalRequest);
+    return renewalRequest;
+  }
+
+  async updateRenewalRequest(id: string, renewalRequestData: Partial<InsertRenewalRequest>): Promise<RenewalRequest | undefined> {
+    const renewalRequest = this.renewalRequests.get(id);
+    if (!renewalRequest) return undefined;
+    
+    const updatedRenewalRequest = { ...renewalRequest, ...renewalRequestData };
+    this.renewalRequests.set(id, updatedRenewalRequest);
+    return updatedRenewalRequest;
   }
 }
 
