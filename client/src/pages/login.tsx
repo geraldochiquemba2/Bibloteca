@@ -106,7 +106,21 @@ export default function Login() {
       return;
     }
 
-    const fullUsername = `${username}@isptec.co.ao`;
+    let fullUsername = username;
+    
+    if (username.includes('@')) {
+      if (!username.endsWith('@isptec.co.ao')) {
+        toast({
+          title: "Erro no login",
+          description: "Apenas emails @isptec.co.ao são permitidos",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      fullUsername = `${username}@isptec.co.ao`;
+    }
+
     loginMutation.mutate({ username: fullUsername, password });
   };
 
@@ -131,8 +145,22 @@ export default function Login() {
       return;
     }
 
-    const fullEmail = `${registerEmail}@isptec.co.ao`;
-    const username = registerEmail;
+    let fullEmail = registerEmail;
+    let username = registerEmail;
+    
+    if (registerEmail.includes('@')) {
+      if (!registerEmail.endsWith('@isptec.co.ao')) {
+        toast({
+          title: "Erro no cadastro",
+          description: "Apenas emails @isptec.co.ao são permitidos",
+          variant: "destructive",
+        });
+        return;
+      }
+      username = registerEmail.split('@')[0];
+    } else {
+      fullEmail = `${registerEmail}@isptec.co.ao`;
+    }
 
     registerMutation.mutate({
       name: registerName,
