@@ -4,8 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { BookOpen, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import logoImage from "@assets/image_1763306167272.png";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -56,8 +57,8 @@ export default function Login() {
         </div>
         <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-primary shadow-lg">
-              <BookOpen className="h-12 w-12 text-primary-foreground" />
+            <div className="flex h-20 w-20 items-center justify-center">
+              <img src={logoImage} alt="ISPTEC Logo" className="h-20 w-20 object-contain" />
             </div>
           </div>
           <div>
