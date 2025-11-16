@@ -21,7 +21,9 @@ import Reports from "@/pages/reports";
 import StudentDashboard from "@/pages/student-dashboard";
 import StudentLoans from "@/pages/student-loans";
 import TeacherDashboard from "@/pages/teacher-dashboard";
+import TeacherLoans from "@/pages/teacher-loans";
 import StaffDashboard from "@/pages/staff-dashboard";
+import StaffLoans from "@/pages/staff-loans";
 import BookSearch from "@/pages/book-search";
 import NotFound from "@/pages/not-found";
 
@@ -103,6 +105,11 @@ function Router() {
           <TeacherDashboard />
         </PrivateRoute>
       </Route>
+      <Route path="/teacher/loans">
+        <PrivateRoute requiredRole="teacher">
+          <TeacherLoans />
+        </PrivateRoute>
+      </Route>
       <Route path="/teacher/books">
         <PrivateRoute requiredRole="teacher">
           <BookSearch />
@@ -111,6 +118,11 @@ function Router() {
       <Route path="/staff/dashboard">
         <PrivateRoute requiredRole="staff">
           <StaffDashboard />
+        </PrivateRoute>
+      </Route>
+      <Route path="/staff/loans">
+        <PrivateRoute requiredRole="staff">
+          <StaffLoans />
         </PrivateRoute>
       </Route>
       <Route path="/staff/books">
