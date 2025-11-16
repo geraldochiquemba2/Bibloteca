@@ -6,6 +6,7 @@ import { z } from "zod";
 // Enums
 export const userTypeEnum = pgEnum("user_type", ["student", "teacher", "staff", "admin"]);
 export const bookTagEnum = pgEnum("book_tag", ["red", "yellow", "white"]);
+export const departmentEnum = pgEnum("department", ["engenharia", "ciencias-sociais", "outros"]);
 export const loanStatusEnum = pgEnum("loan_status", ["active", "returned", "overdue"]);
 export const reservationStatusEnum = pgEnum("reservation_status", ["pending", "notified", "completed", "cancelled"]);
 export const fineStatusEnum = pgEnum("fine_status", ["pending", "paid"]);
@@ -38,6 +39,7 @@ export const books = pgTable("books", {
   publisher: text("publisher"),
   yearPublished: integer("year_published"),
   categoryId: varchar("category_id").references(() => categories.id),
+  department: departmentEnum("department").notNull().default("outros"),
   tag: bookTagEnum("tag").notNull().default("white"),
   totalCopies: integer("total_copies").notNull().default(1),
   availableCopies: integer("available_copies").notNull().default(1),

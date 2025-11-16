@@ -21,6 +21,7 @@ import Reports from "@/pages/reports";
 import StudentDashboard from "@/pages/student-dashboard";
 import TeacherDashboard from "@/pages/teacher-dashboard";
 import StaffDashboard from "@/pages/staff-dashboard";
+import BookSearch from "@/pages/book-search";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
@@ -86,14 +87,29 @@ function Router() {
           <StudentDashboard />
         </PrivateRoute>
       </Route>
+      <Route path="/student/books">
+        <PrivateRoute requiredRole="student">
+          <BookSearch />
+        </PrivateRoute>
+      </Route>
       <Route path="/teacher/dashboard">
         <PrivateRoute requiredRole="teacher">
           <TeacherDashboard />
         </PrivateRoute>
       </Route>
+      <Route path="/teacher/books">
+        <PrivateRoute requiredRole="teacher">
+          <BookSearch />
+        </PrivateRoute>
+      </Route>
       <Route path="/staff/dashboard">
         <PrivateRoute requiredRole="staff">
           <StaffDashboard />
+        </PrivateRoute>
+      </Route>
+      <Route path="/staff/books">
+        <PrivateRoute requiredRole="staff">
+          <BookSearch />
         </PrivateRoute>
       </Route>
       <Route>

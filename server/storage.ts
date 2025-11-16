@@ -174,6 +174,7 @@ export class MemStorage implements IStorage {
       publisher: insertBook.publisher ?? null,
       yearPublished: insertBook.yearPublished ?? null,
       categoryId: insertBook.categoryId ?? null,
+      department: insertBook.department ?? "outros",
       tag: insertBook.tag ?? "white",
       totalCopies: insertBook.totalCopies ?? 1,
       availableCopies: insertBook.availableCopies ?? 1,

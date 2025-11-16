@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Calendar, AlertCircle, LogOut } from "lucide-react";
+import { BookOpen, Calendar, AlertCircle, LogOut, Search } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
+  const [, setLocation] = useLocation();
 
   const { data: loans, isLoading: loansLoading } = useQuery({
     queryKey: ["/api/loans/user", user?.id],
@@ -37,10 +39,16 @@ export default function StudentDashboard() {
             <h1 className="text-2xl font-bold" data-testid="text-dashboard-title">Área do Estudante</h1>
             <p className="text-sm text-muted-foreground">Bem-vindo, {user?.name}</p>
           </div>
-          <Button variant="outline" onClick={logout} data-testid="button-logout">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sair
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setLocation("/student/books")} data-testid="button-search-books">
+              <Search className="h-4 w-4 mr-2" />
+              Buscar Livros
+            </Button>
+            <Button variant="outline" onClick={logout} data-testid="button-logout">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair
+            </Button>
+          </div>
         </div>
       </header>
 

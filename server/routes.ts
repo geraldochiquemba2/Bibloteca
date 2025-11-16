@@ -254,13 +254,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Book routes
   app.get("/api/books", async (req, res) => {
     try {
-      const { search } = req.query;
-      let books;
+      const { search, department, categoryId } = req.query;
+      let books = await storage.getAllBooks();
       
+      // Apply search filter
       if (search && typeof search === "string") {
-        books = await storage.searchBooks(search);
-      } else {
-        books = await storage.getAllBooks();
+        const searchLower = search.toLowerCase();
+        books = books.filter(book => 
+          book.title.toLowerCase().includes(searchLower) ||
+          book.author.toLowerCase().includes(searchLower) ||
+          (book.isbn && book.isbn.toLowerCase().includes(searchLower))
+        );
+      }
+      
+      // Apply department filter
+      if (department && typeof department === "string") {
+        books = books.filter(book => book.department === department);
+      }
+      
+      // Apply category filter
+      if (categoryId && typeof categoryId === "string") {
+        books = books.filter(book => book.categoryId === categoryId);
       }
       
       res.json(books);
