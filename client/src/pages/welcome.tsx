@@ -58,7 +58,14 @@ export default function Welcome() {
   return (
     <div className="min-h-screen bg-background">
       <div className="relative min-h-screen flex flex-col">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 -z-10" />
+        <div className="absolute inset-0 -z-10">
+          <img 
+            src="https://images.pexels.com/photos/8199629/pexels-photo-8199629.jpeg" 
+            alt="Biblioteca de fundo" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/90 to-background/85" />
+        </div>
         
         <header className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
