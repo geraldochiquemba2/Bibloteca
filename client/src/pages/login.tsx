@@ -194,16 +194,20 @@ export default function Login() {
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="username">Nome de Utilizador</Label>
-                    <Input
-                      id="username"
-                      type="text"
-                      placeholder="admin"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      data-testid="input-login-username"
-                      disabled={loginMutation.isPending}
-                    />
+                    <Label htmlFor="username">Email/Número de Matrícula</Label>
+                    <div className="flex items-center gap-0 border rounded-md bg-background">
+                      <Input
+                        id="username"
+                        type="text"
+                        placeholder="joao.silva"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        data-testid="input-login-username"
+                        disabled={loginMutation.isPending}
+                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                      />
+                      <span className="pr-3 text-sm text-muted-foreground whitespace-nowrap">@isptec.co.ao</span>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Senha</Label>
@@ -228,7 +232,7 @@ export default function Login() {
                 </form>
                 <div className="mt-4 text-sm text-muted-foreground text-center">
                   <p>Credenciais padrão:</p>
-                  <p className="font-mono">admin / admin123</p>
+                  <p className="font-mono">admin@isptec.co.ao / admin123</p>
                 </div>
               </TabsContent>
               
