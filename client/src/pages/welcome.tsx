@@ -80,7 +80,7 @@ export default function Welcome() {
         </header>
 
         <main className="flex-1 container mx-auto px-4 py-4 relative">
-          <div className="absolute inset-0 -z-10 opacity-5">
+          <div className="absolute inset-0 -z-10 opacity-80">
             <img 
               src="https://images.pexels.com/photos/8199629/pexels-photo-8199629.jpeg" 
               alt="Biblioteca de fundo" 
