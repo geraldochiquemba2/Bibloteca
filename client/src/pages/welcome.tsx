@@ -64,7 +64,7 @@ export default function Welcome() {
             alt="Biblioteca de fundo" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/90 to-background/85" />
+          <div className="absolute inset-0 bg-gradient-to-br from-background/70 via-background/75 to-background/70" />
         </div>
         
         <header className="container mx-auto px-4 py-6">
