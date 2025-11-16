@@ -70,9 +70,9 @@ export default function Welcome() {
           </div>
         </header>
 
-        <main className="flex-1 container mx-auto px-4 py-12">
+        <main className="flex-1 container mx-auto px-4 py-4">
           <div className="max-w-6xl mx-auto space-y-16">
-            <div className="grid md:grid-cols-2 gap-12 items-center py-12">
+            <div className="grid md:grid-cols-2 gap-12 items-center py-4">
               <div className="space-y-6">
                 <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
                   Bem-vindo à
