@@ -10,6 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import backgroundImage from "@assets/pexels-yankrukov-8199558_1763305882675.jpg";
 
 export default function Welcome() {
   const [, setLocation] = useLocation();
@@ -48,7 +49,14 @@ export default function Welcome() {
   return (
     <div className="min-h-screen bg-background">
       <div className="relative min-h-screen flex flex-col">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10 -z-10" />
+        <div className="absolute inset-0 -z-10">
+          <img 
+            src={backgroundImage} 
+            alt="Biblioteca" 
+            className="w-full h-full object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/90 to-background/95" />
+        </div>
         
         <header className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
