@@ -61,8 +61,8 @@ export default function Login() {
             </div>
           </div>
           <div>
-            <h1 className="text-4xl font-bold tracking-tight">Biblioteca ISPTEC</h1>
-            <p className="text-lg text-muted-foreground mt-2">
+            <h1 className="text-4xl font-bold tracking-tight text-white">Biblioteca ISPTEC</h1>
+            <p className="text-lg text-white mt-2">
               Sistema de Gestão Bibliotecária
             </p>
           </div>
