@@ -1,0 +1,220 @@
+Aqui está o **prompt completo e atualizado** para o Sistema de Gestão da Biblioteca Universitária do ISPTEC:
+
+---
+
+## **PROMPT COMPLETO: SISTEMA DE GESTÃO DA BIBLIOTECA ISPTEC**
+
+### **CONTEXTO E IDENTIFICAÇÃO**
+**Sistema:** Sistema Integrado de Gestão Bibliotecária do ISPTEC  
+**Versão:** 1.0  
+**Objetivo:** Digitalizar e otimizar todos os processos da biblioteca universitária  
+**Metodologia:** RUP (Rational Unified Process) com abordagem iterativa e incremental
+
+---
+
+### **ESPECIFICAÇÕES TÉCNICAS**
+
+#### **1. ARQUITETURA DO SISTEMA**
+- **Frontend:** Interface web responsiva + aplicação móvel
+- **Backend:** API RESTful com microserviços
+- **Base de Dados:** PostgreSQL com extensões de pesquisa full-text
+- **Integrações:** OCR, serviço de email, API de chatbots
+
+#### **2. MÓDULOS PRINCIPAIS**
+```
+- Módulo de Autenticação e Autorização
+- Módulo de Gestão de Utilizadores
+- Módulo de Catálogo Bibliográfico  
+- Módulo de Circulação (Empréstimos/Devoluções)
+- Módulo de Reservas
+- Módulo de Multas e Financeiro
+- Módulo de Relatórios e Analytics
+- Módulo de IA e Automações
+```
+
+---
+
+### **REGRAS DE NEGÓCIO DETALHADAS**
+
+#### **👥 GESTÃO DE UTILIZADORES**
+**Tipos de Utilizadores:**
+1. **DOCENTES**
+   - Prazo de empréstimo: 15 dias
+   - Limite: 4 exemplares simultâneos
+   - Restrição: 1 obra por título
+   - Livros de cedência diária: 1 exemplar por 1 dia
+
+2. **ESTUDANTES**
+   - Prazo de empréstimo: 5 dias
+   - Limite: 2 exemplares simultâneos
+   - Restrição: títulos não repetidos
+   - Livros de cedência especial: -1 dia – 1 exemplar
+
+3. **FUNCIONÁRIOS TÉCNICO-ADMINISTRATIVOS**
+   - Mesmas regras dos estudantes
+
+#### **🏷️ SISTEMA DE CLASSIFICAÇÃO POR ETIQUETAS**
+| Cor da Etiqueta | Tipo de Empréstimo | Regras |
+|-----------------|-------------------|--------|
+| **VERMELHA** | Uso Exclusivo na Biblioteca | Não permite empréstimo externo |
+| **AMARELA** | 1 Dia | Empréstimo de 24 horas |
+| **BRANCA** | 5 Dias | Empréstimo padrão de 5 dias |
+
+#### **💰 SISTEMA DE MULTAS**
+- **Valor:** 500 Kz por dia de atraso
+- **Aplicável a:** Todos os tipos de livros
+- **Bloqueio:** Utilizadores com multas superiores a 2000 Kz não podem fazer novos empréstimos
+- **Pagamento:** Integração com sistema financeiro da instituição
+
+#### **🔄 SISTEMA DE RENOVAÇÕES**
+- **Máximo de renovações:** 2 por livro
+- **Condição:** Não pode haver reservas pendentes
+- **Prazo:** Renovação igual ao prazo original do empréstimo
+- **Restrição:** Não permite renovação se houver multas pendentes
+
+#### **📋 SISTEMA DE RESERVAS**
+- **Lista de espera:** Automática e por ordem de chegada
+- **Notificação:** Email/SMS quando livro disponível
+- **Prazo de levantamento:** 48 horas após notificação
+- **Limite:** 3 reservas simultâneas por utilizador
+
+---
+
+### **FUNCIONALIDADES DE IA E AUTOMAÇÃO**
+
+#### **1. REGISTRO INTELIGENTE DE LIVROS**
+```python
+# Fluxo OCR:
+CAPTURA_IMAGEM → EXTRAÇÃO_TEXTO → IDENTIFICAÇÃO_METADADOS → CADASTRO_AUTOMÁTICO
+# Metadados extraídos: Título, Autor, ISBN, Editora, Ano
+```
+
+#### **2. SISTEMA DE RECOMENDAÇÕES**
+- **Base:** Histórico de empréstimos do utilizador
+- **Algoritmo:** Filtragem colaborativa + por conteúdo
+- **Saída:** "Utilizadores que emprestaram X também emprestaram Y"
+
+#### **3. CHATBOT DE ATENDIMENTO**
+**Capacidades:**
+- Consulta de disponibilidade de livros
+- Informação sobre prazos e multas
+- Auxílio na renovação de empréstimos
+- Orientação sobre regulamento da biblioteca
+
+#### **4. CATEGORIZAÇÃO AUTOMÁTICA**
+- Análise de palavras-chave em títulos e resumos
+- Classificação automática em categorias temáticas
+- Sugestão de etiquetas baseada no conteúdo
+
+---
+
+### **FLUXOS DE PROCESSO PRINCIPAIS**
+
+#### **📖 EMPRÉSTIMO DE LIVRO**
+```
+1. Utilizador apresenta cartão de identificação
+2. Sistema valida:
+   - Tipo de utilizador (Docente/Estudante/Funcionário)
+   - Multas pendentes (< 2000 Kz)
+   - Limite de empréstimos não excedido
+   - Etiqueta do livro permite empréstimo externo
+3. Registro do empréstimo com data de devolução
+4. Atualização de disponibilidade no catálogo
+5. Emissão de comprovante digital
+```
+
+#### **↩️ DEVOLUÇÃO DE LIVRO**
+```
+1. Scan do código do livro + identificação do utilizador
+2. Sistema verifica:
+   - Data de devolução vs. data atual
+   - Cálculo automático de multas (se aplicável)
+   - Existência de reservas pendentes
+3. Se multa: registro no perfil do utilizador
+4. Se reserva: notificação automática ao próximo da lista
+5. Atualização de status para "disponível"
+```
+
+#### **🎯 RESERVA DE LIVRO**
+```
+1. Utilizador solicita reserva de livro indisponível
+2. Sistema verifica limite de reservas do utilizador
+3. Adiciona à lista de espera com timestamp
+4. Quando livro disponível:
+   - Notificação automática por email/SMS
+   - Inicia contagem de 48h para levantamento
+   - Se não levantado, passa para o próximo da lista
+```
+
+---
+
+### **RELATÓRIOS E ANALYTICS**
+
+#### **📊 RELATÓRIOS OBRIGATÓRIOS**
+- Livros mais emprestados (por período)
+- Utilizadores mais ativos
+- Taxa de utilização por categoria temática
+- Multas aplicadas e pagas
+- Reservas não levantadas
+- Tempo médio de empréstimo por tipo de utilizador
+
+#### **📈 MÉTRICAS DE DESEMPENHO**
+- Taxa de rotatividade do acervo
+- Índice de satisfação do utilizador
+- Tempo médio de atendimento
+- Percentual de livros nunca emprestados
+
+---
+
+### **CASOS DE EXCEÇÃO E TRATAMENTO DE ERROS**
+
+#### **🚫 SITUAÇÕES DE BLOQUEIO**
+- Utilizador com multa superior a 2000 Kz
+- Tentativa de empréstimo de livro com etiqueta vermelha
+- Exceder limite de exemplares por tipo de utilizador
+- Tentativa de renovação com reservas pendentes
+
+#### **🔄 PROCESSOS DE RECUPERAÇÃO**
+- Pagamento de multas via sistema integrado
+- Apelação de multas (via administração)
+- Recuperação de livros danificados ou perdidos
+- Reclassificação de etiquetas incorretas
+
+---
+
+### **EXEMPLOS DE INTERAÇÃO**
+
+**Cenário 1: Empréstimo bem-sucedido**
+```
+UTILIZADOR: "Quero emprestar 'Engenharia de Software'"
+SISTEMA: "✅ Empréstimo realizado! Devolução até: 15/02/2026. 
+          Você tem 3 livros emprestados (limite: 4 para docentes)"
+```
+
+**Cenário 2: Tentativa de empréstimo bloqueada**
+```
+UTILIZADOR: "Quero renovar 'Arquitetura de Computadores'"
+SISTEMA: "❌ Não é possível renovar. Existe 1 reserva pendente para este livro.
+          Por favor, efetue a devolução até amanhã para evitar multas."
+```
+
+**Cenário 3: Consulta via Chatbot**
+```
+UTILIZADOR: "Tenho multas?"
+CHATBOT: "🔍 Verificando... Você tem 1 multa de 500 Kz por atraso na devolução.
+          Total pendente: 500 Kz. Pague para liberar novos empréstimos."
+```
+
+---
+
+### **REQUISITOS NÃO FUNCIONAIS**
+
+- **Disponibilidade:** 99.5% (exceto manutenção programada)
+- **Performance:** Resposta < 2 segundos para operações críticas
+- **Segurança:** Autenticação via SSO institucional
+- **Backup:** Diário completo + incrementais a cada 4 horas
+- **Conformidade:** LGPD para proteção de dados de utilizadores
+
+---
+
+Este prompt serve como **especificação completa** para desenvolvimento, documentação ou treinamento de sistemas de IA. Precise de alguma adaptação ou detalhe adicional?
