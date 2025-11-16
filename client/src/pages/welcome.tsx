@@ -2,9 +2,23 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, Users, Clock, Search, ArrowRight } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 export default function Welcome() {
   const [, setLocation] = useLocation();
+
+  const carouselImages = [
+    "https://www.isptec.co.ao/public/assets/img/uploads/img-2597461014.jpeg",
+    "https://scontent.flad5-1.fna.fbcdn.net/v/t39.30808-6/474685231_7537366406387327_4344414854034230848_n.jpg?_nc_cat=102&ccb=1-7&_nc_sid=3a1ebe&_nc_eui2=AeGrDWjWbH3E8cYV0oQbwLEs7zytRnucbiTvPK1Ge5xuJM6ff8z-JWlQJO4Fp4952L52Y2ybByJwMVPRm7ZM3jSo&_nc_ohc=n0tcU46mcWwQ7kNvwGMNPgn&_nc_oc=AdnslNiOy_2cA_VkRk-2cXfEpGnLbyTH6rIliaZMBCThf0LEDAsOyFevjJiUn88VcCA&_nc_zt=23&_nc_ht=scontent.flad5-1.fna&_nc_gid=o4jsX3UnbuQw_mu48mDBEQ&oh=00_AfiMhAZC7DvX2ABoD1U6O_rU-aVLJjCYozTWZzdz-VCsmQ&oe=691FAE7A",
+    "https://scontent.flad5-1.fna.fbcdn.net/v/t39.30808-6/474621421_7537366189720682_8005053412394855097_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=3a1ebe&_nc_eui2=AeH2zvLGbR7999s7_XJwpSCG2mnUgTyeVFvaadSBPJ5UWwwm1-kfKc589gaZdTqEj35s-g_BXpPboJx1IOIGA2OK&_nc_ohc=4Yyg2oDjD2wQ7kNvwGVTAB_&_nc_oc=AdliOzc6XoG1RW4FLkDtkIzph04gN7DqISUqVheFioa-lZw_P8jSMVR_V4eS561FksI&_nc_zt=23&_nc_ht=scontent.flad5-1.fna&_nc_gid=6VfQg0BCoOWPgzTDWcg7rw&oh=00_Afg9jFMWL1C9JJrTQa04hPPMk_OlvPKKS0tStmSOLtUnVA&oe=691FC20A",
+  ];
 
   const features = [
     {
@@ -57,26 +71,61 @@ export default function Welcome() {
 
         <main className="flex-1 container mx-auto px-4 py-12">
           <div className="max-w-6xl mx-auto space-y-16">
-            <div className="text-center space-y-6 py-12">
-              <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
-                Bem-vindo à
-                <br />
-                <span className="text-primary">Biblioteca ISPTEC</span>
-              </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                O seu portal de conhecimento em tecnologia e ciência da computação.
-                Acesse nosso acervo completo e gerencie seus empréstimos de forma fácil e eficiente.
-              </p>
-              <div className="flex gap-4 justify-center flex-wrap pt-4">
-                <Button 
-                  size="lg"
-                  onClick={() => setLocation("/login")}
-                  data-testid="button-access-system"
-                  className="gap-2"
+            <div className="grid md:grid-cols-2 gap-12 items-center py-12">
+              <div className="space-y-6">
+                <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+                  Bem-vindo à
+                  <br />
+                  <span className="text-primary">Biblioteca ISPTEC</span>
+                </h1>
+                <p className="text-xl text-muted-foreground">
+                  O seu portal de conhecimento em tecnologia e ciência da computação.
+                  Acesse nosso acervo completo e gerencie seus empréstimos de forma fácil e eficiente.
+                </p>
+                <div className="flex gap-4 flex-wrap pt-4">
+                  <Button 
+                    size="lg"
+                    onClick={() => setLocation("/login")}
+                    data-testid="button-access-system"
+                    className="gap-2"
+                  >
+                    Acessar Sistema
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="relative">
+                <Carousel
+                  opts={{
+                    align: "start",
+                    loop: true,
+                  }}
+                  plugins={[
+                    Autoplay({
+                      delay: 4000,
+                    }),
+                  ]}
+                  className="w-full"
+                  data-testid="carousel-images"
                 >
-                  Acessar Sistema
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                  <CarouselContent>
+                    {carouselImages.map((image, index) => (
+                      <CarouselItem key={index}>
+                        <div className="relative aspect-video rounded-lg overflow-hidden shadow-xl">
+                          <img
+                            src={image}
+                            alt={`Imagem da biblioteca ISPTEC ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            data-testid={`carousel-image-${index}`}
+                          />
+                        </div>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="left-2" data-testid="carousel-prev" />
+                  <CarouselNext className="right-2" data-testid="carousel-next" />
+                </Carousel>
               </div>
             </div>
 
