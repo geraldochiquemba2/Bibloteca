@@ -48,7 +48,7 @@ export default function Login() {
             variant="ghost"
             onClick={() => setLocation("/")}
             data-testid="button-back"
-            className="gap-2 text-white"
+            className="gap-2 text-white backdrop-blur-md bg-white/10 border border-white/20"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar
