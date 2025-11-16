@@ -19,6 +19,7 @@ import Users from "@/pages/users";
 import Fines from "@/pages/fines";
 import Reports from "@/pages/reports";
 import StudentDashboard from "@/pages/student-dashboard";
+import StudentLoans from "@/pages/student-loans";
 import TeacherDashboard from "@/pages/teacher-dashboard";
 import StaffDashboard from "@/pages/staff-dashboard";
 import BookSearch from "@/pages/book-search";
@@ -85,6 +86,11 @@ function Router() {
       <Route path="/student/dashboard">
         <PrivateRoute requiredRole="student">
           <StudentDashboard />
+        </PrivateRoute>
+      </Route>
+      <Route path="/student/loans">
+        <PrivateRoute requiredRole="student">
+          <StudentLoans />
         </PrivateRoute>
       </Route>
       <Route path="/student/books">
