@@ -6,31 +6,53 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import logoImage from "@assets/image_1763306167272.png";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      return apiRequest("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      });
+    },
+    onSuccess: (data) => {
+      localStorage.setItem("user", JSON.stringify(data.user));
+      toast({
+        title: "Login realizado com sucesso!",
+        description: `Bem-vindo ${data.user.name}`,
+      });
+      setLocation("/dashboard");
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro no login",
+        description: error.message || "Credenciais inválidas",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Mock login - em produção, isso seria uma chamada à API
-    if (email && password) {
-      toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo ao Sistema de Gestão da Biblioteca ISPTEC",
-      });
-      setLocation("/dashboard");
-    } else {
+    if (!username || !password) {
       toast({
         title: "Erro no login",
         description: "Por favor, preencha todos os campos",
         variant: "destructive",
       });
+      return;
     }
+
+    loginMutation.mutate({ username, password });
   };
 
   return (
@@ -78,14 +100,15 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Nome de Utilizador</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu.email@isptec.ao"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  data-testid="input-email"
+                  id="username"
+                  type="text"
+                  placeholder="admin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  data-testid="input-username"
+                  disabled={loginMutation.isPending}
                 />
               </div>
               <div className="space-y-2">
@@ -97,12 +120,22 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   data-testid="input-password"
+                  disabled={loginMutation.isPending}
                 />
               </div>
-              <Button type="submit" className="w-full" data-testid="button-login">
-                Entrar
+              <Button 
+                type="submit" 
+                className="w-full" 
+                data-testid="button-login"
+                disabled={loginMutation.isPending}
+              >
+                {loginMutation.isPending ? "Entrando..." : "Entrar"}
               </Button>
             </form>
+            <div className="mt-4 text-sm text-muted-foreground text-center">
+              <p>Credenciais padrão:</p>
+              <p className="font-mono">admin / admin123</p>
+            </div>
           </CardContent>
         </Card>
 

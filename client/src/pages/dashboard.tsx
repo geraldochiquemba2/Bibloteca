@@ -1,50 +1,41 @@
 import { StatsCard } from "@/components/stats-card";
-import { LoanTable, type Loan } from "@/components/loan-table";
 import { BookOpen, Users, AlertCircle, BookCopy } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { addDays, subDays } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
-//todo: remove mock functionality
-const mockLoans: Loan[] = [
-  {
-    id: "1",
-    userName: "Maria Nzinga",
-    userType: "estudante",
-    bookTitle: "Introdução à Programação em Python",
-    loanDate: subDays(new Date(), 3),
-    dueDate: addDays(new Date(), 2),
-    status: "active",
-  },
-  {
-    id: "2",
-    userName: "Prof. António Cassoma",
-    userType: "docente",
-    bookTitle: "Estruturas de Dados e Algoritmos",
-    loanDate: subDays(new Date(), 8),
-    dueDate: addDays(new Date(), 7),
-    status: "active",
-  },
-  {
-    id: "3",
-    userName: "Ana Kiluange",
-    userType: "estudante",
-    bookTitle: "Redes de Computadores - 5ª Edição",
-    loanDate: subDays(new Date(), 7),
-    dueDate: subDays(new Date(), 1),
-    status: "overdue",
-    fine: 500,
-  },
-];
-
-const mockMostBorrowed = [
-  { title: "Fundamentos de Engenharia de Software", count: 67, category: "Engenharia de Software" },
-  { title: "Algoritmos: Teoria e Prática", count: 54, category: "Ciência da Computação" },
-  { title: "Sistemas Operacionais Modernos", count: 48, category: "Sistemas Operacionais" },
-  { title: "Banco de Dados: Conceitos e Projeto", count: 42, category: "Bases de Dados" },
-  { title: "Análise e Projeto de Sistemas", count: 38, category: "Engenharia de Software" },
-];
+interface DashboardStats {
+  totalBooks: number;
+  availableBooks: number;
+  totalUsers: number;
+  activeLoans: number;
+  overdueLoans: number;
+  pendingFines: number;
+  totalFinesAmount: number;
+}
 
 export default function Dashboard() {
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard/stats"],
+  });
+
+  const { data: popularBooks } = useQuery<any[]>({
+    queryKey: ["/api/reports/popular-books"],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 space-y-6 p-6">
+        <Skeleton className="h-20 w-full" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 space-y-6 p-6">
       <div>
@@ -57,31 +48,27 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
           title="Total de Livros"
-          value="3.842"
+          value={stats?.totalBooks.toString() || "0"}
           icon={BookOpen}
           description="No acervo"
-          trend={{ value: 8, isPositive: true }}
         />
         <StatsCard
           title="Empréstimos Ativos"
-          value="247"
+          value={stats?.activeLoans.toString() || "0"}
           icon={BookCopy}
           description="Atualmente emprestados"
-          trend={{ value: 12, isPositive: true }}
         />
         <StatsCard
           title="Multas Pendentes"
-          value="87.500 Kz"
+          value={`${stats?.totalFinesAmount.toLocaleString('pt-AO')} Kz` || "0 Kz"}
           icon={AlertCircle}
-          description="De 34 utilizadores"
-          trend={{ value: 5, isPositive: false }}
+          description={`De ${stats?.pendingFines || 0} empréstimos`}
         />
         <StatsCard
           title="Utilizadores Totais"
-          value="1.856"
+          value={stats?.totalUsers.toString() || "0"}
           icon={Users}
           description="Contas ativas"
-          trend={{ value: 18, isPositive: true }}
         />
       </div>
 
@@ -89,76 +76,68 @@ export default function Dashboard() {
         <Card className="md:col-span-4">
           <CardHeader>
             <CardTitle>Livros Mais Emprestados</CardTitle>
-            <CardDescription>Top 5 livros este mês</CardDescription>
+            <CardDescription>Top livros com mais empréstimos</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockMostBorrowed.map((book, index) => (
-                <div key={index} className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary font-bold flex-shrink-0">
-                    {index + 1}
+              {popularBooks && popularBooks.length > 0 ? (
+                popularBooks.map((item, index) => (
+                  <div key={index} className="flex items-center gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary font-bold flex-shrink-0">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{item.book?.title || "Sem título"}</p>
+                      <p className="text-sm text-muted-foreground">{item.book?.author || "Autor desconhecido"}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="font-bold text-lg">{item.loanCount}</p>
+                      <p className="text-xs text-muted-foreground">empréstimos</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{book.title}</p>
-                    <p className="text-sm text-muted-foreground">{book.category}</p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-lg">{book.count}</p>
-                    <p className="text-xs text-muted-foreground">empréstimos</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-center text-muted-foreground py-8">Nenhum dado disponível</p>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <Card className="md:col-span-3">
           <CardHeader>
-            <CardTitle>Atividade Recente</CardTitle>
-            <CardDescription>Últimos eventos da biblioteca</CardDescription>
+            <CardTitle>Estatísticas Rápidas</CardTitle>
+            <CardDescription>Informações importantes</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { action: "Empréstimo", user: "Maria Nzinga", book: "Python Avançado", time: "há 2h" },
-                { action: "Devolução", user: "João Domingos", book: "Redes TCP/IP", time: "há 3h" },
-                { action: "Multa Paga", user: "Ana Kiluange", amount: "2.500 Kz", time: "há 4h" },
-                { action: "Reserva", user: "Pedro Sakaita", book: "Java Enterprise", time: "há 5h" },
-                { action: "Empréstimo", user: "Carlos Mateus", book: "Linux Essentials", time: "há 1d" },
-              ].map((activity, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="flex h-2 w-2 mt-2 rounded-full bg-primary flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">
-                      <span className="font-medium">{activity.action}</span> - {activity.user}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {"book" in activity && activity.book}
-                      {"amount" in activity && activity.amount}
-                    </p>
-                  </div>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">{activity.time}</span>
-                </div>
-              ))}
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Livros Disponíveis</span>
+                <span className="text-2xl font-bold text-green-600">{stats?.availableBooks || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Empréstimos Atrasados</span>
+                <span className="text-2xl font-bold text-red-600">{stats?.overdueLoans || 0}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Taxa de Utilização</span>
+                <span className="text-2xl font-bold text-primary">
+                  {stats?.totalBooks ? 
+                    Math.round((stats.activeLoans / stats.totalBooks) * 100) : 0}%
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Próximas Devoluções</CardTitle>
-          <CardDescription>Livros com devolução prevista nos próximos 7 dias</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LoanTable
-            loans={mockLoans}
-            onReturn={(id) => console.log("Devolver empréstimo:", id)}
-            onRenew={(id) => console.log("Renovar empréstimo:", id)}
-            onViewUser={(id) => console.log("Ver utilizador:", id)}
-          />
-        </CardContent>
-      </Card>
+      {stats && stats.overdueLoans > 0 && (
+        <Card className="border-red-200 dark:border-red-800">
+          <CardHeader>
+            <CardTitle className="text-red-600 dark:text-red-400">Alerta: Empréstimos Atrasados</CardTitle>
+            <CardDescription>Existem {stats.overdueLoans} empréstimos atrasados que precisam de atenção</CardDescription>
+          </CardHeader>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,223 +1,378 @@
 import { useState } from "react";
-import { BookCard, type BookLabel, type BookStatus } from "@/components/book-card";
-import { Input } from "@/components/ui/input";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Search, Plus, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Plus, Search, BookOpen, Tag } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
-//todo: remove mock functionality
-const mockBooks = [
-  {
-    id: "1",
-    title: "Fundamentos de Engenharia de Software",
-    author: "Roger S. Pressman",
-    isbn: "978-85-8055-933-7",
-    category: "Engenharia de Software",
-    label: "white" as BookLabel,
-    status: "available" as BookStatus,
-  },
-  {
-    id: "2",
-    title: "Algoritmos: Teoria e Prática",
-    author: "Thomas H. Cormen",
-    isbn: "978-85-352-3699-6",
-    category: "Ciência da Computação",
-    label: "white" as BookLabel,
-    status: "on-loan" as BookStatus,
-  },
-  {
-    id: "3",
-    title: "Redes de Computadores - 6ª Edição",
-    author: "Andrew S. Tanenbaum",
-    isbn: "978-85-8260-559-2",
-    category: "Redes de Computadores",
-    label: "yellow" as BookLabel,
-    status: "available" as BookStatus,
-  },
-  {
-    id: "4",
-    title: "Introdução à Teoria da Computação",
-    author: "Michael Sipser",
-    isbn: "978-85-221-0686-8",
-    category: "Teoria da Computação",
-    label: "red" as BookLabel,
-    status: "available" as BookStatus,
-  },
-  {
-    id: "5",
-    title: "Sistemas Operacionais Modernos",
-    author: "Andrew S. Tanenbaum",
-    isbn: "978-85-4302-063-1",
-    category: "Sistemas Operacionais",
-    label: "white" as BookLabel,
-    status: "reserved" as BookStatus,
-  },
-  {
-    id: "6",
-    title: "Projeto e Implementação de Bases de Dados",
-    author: "Carlos Alberto Heuser",
-    isbn: "978-85-7780-382-8",
-    category: "Bases de Dados",
-    label: "white" as BookLabel,
-    status: "available" as BookStatus,
-  },
-  {
-    id: "7",
-    title: "Introdução à Programação em Python",
-    author: "Nilo Ney Coutinho Menezes",
-    isbn: "978-85-7522-718-3",
-    category: "Programação",
-    label: "white" as BookLabel,
-    status: "available" as BookStatus,
-  },
-  {
-    id: "8",
-    title: "Padrões de Projetos: Soluções Reutilizáveis",
-    author: "Erich Gamma",
-    isbn: "978-85-7780-701-7",
-    category: "Engenharia de Software",
-    label: "yellow" as BookLabel,
-    status: "on-loan" as BookStatus,
-  },
-  {
-    id: "9",
-    title: "Arquitetura de Computadores",
-    author: "José Delgado",
-    isbn: "978-972-722-756-4",
-    category: "Hardware",
-    label: "red" as BookLabel,
-    status: "available" as BookStatus,
-  },
-  {
-    id: "10",
-    title: "Inteligência Artificial: Uma Abordagem Moderna",
-    author: "Stuart Russell",
-    isbn: "978-85-216-2936-0",
-    category: "Inteligência Artificial",
-    label: "white" as BookLabel,
-    status: "available" as BookStatus,
-  },
-  {
-    id: "11",
-    title: "Segurança de Computadores: Princípios e Práticas",
-    author: "William Stallings",
-    isbn: "978-85-4301-918-5",
-    category: "Segurança da Informação",
-    label: "white" as BookLabel,
-    status: "reserved" as BookStatus,
-  },
-  {
-    id: "12",
-    title: "Desenvolvimento Web com Django",
-    author: "Osvaldo Santana Neto",
-    isbn: "978-85-7522-566-0",
-    category: "Desenvolvimento Web",
-    label: "yellow" as BookLabel,
-    status: "available" as BookStatus,
-  },
-];
+const bookFormSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório"),
+  author: z.string().min(1, "Autor é obrigatório"),
+  isbn: z.string().optional(),
+  publisher: z.string().optional(),
+  yearPublished: z.number().optional(),
+  categoryId: z.string().optional(),
+  tag: z.enum(["red", "yellow", "white"]),
+  totalCopies: z.number().min(1),
+  availableCopies: z.number().min(0),
+  description: z.string().optional(),
+});
+
+type BookFormValues = z.infer<typeof bookFormSchema>;
+
+const tagColors = {
+  red: { bg: "bg-red-100 dark:bg-red-900/30", text: "text-red-700 dark:text-red-300", label: "Uso na Biblioteca" },
+  yellow: { bg: "bg-yellow-100 dark:bg-yellow-900/30", text: "text-yellow-700 dark:text-yellow-300", label: "1 Dia" },
+  white: { bg: "bg-gray-100 dark:bg-gray-800", text: "text-gray-700 dark:text-gray-300", label: "5 Dias" },
+};
 
 export default function Books() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [labelFilter, setLabelFilter] = useState<string>("all");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  const filteredBooks = mockBooks.filter((book) => {
-    const matchesSearch =
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.isbn.includes(searchQuery);
-    const matchesStatus = statusFilter === "all" || book.status === statusFilter;
-    const matchesLabel = labelFilter === "all" || book.label === labelFilter;
-    return matchesSearch && matchesStatus && matchesLabel;
+  const { data: books, isLoading } = useQuery<any[]>({
+    queryKey: searchQuery ? ["/api/books", { search: searchQuery }] : ["/api/books"],
   });
+
+  const { data: categories } = useQuery<any[]>({
+    queryKey: ["/api/categories"],
+  });
+
+  const form = useForm<BookFormValues>({
+    resolver: zodResolver(bookFormSchema),
+    defaultValues: {
+      title: "",
+      author: "",
+      isbn: "",
+      publisher: "",
+      tag: "white",
+      totalCopies: 1,
+      availableCopies: 1,
+      description: "",
+    },
+  });
+
+  const createBookMutation = useMutation({
+    mutationFn: async (data: BookFormValues) => {
+      return apiRequest("/api/books", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      toast({
+        title: "Livro cadastrado!",
+        description: "O livro foi adicionado ao acervo com sucesso.",
+      });
+      setIsDialogOpen(false);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao cadastrar livro",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: BookFormValues) => {
+    createBookMutation.mutate(data);
+  };
 
   return (
     <div className="flex-1 space-y-6 p-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Catálogo de Livros</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Gestão de Livros</h1>
           <p className="text-muted-foreground">
-            Explore e gerencie o acervo da biblioteca
+            Gerir o acervo bibliográfico da instituição
           </p>
         </div>
-        <Button data-testid="button-add-book">
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Livro
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-book">
+              <Plus className="mr-2 h-4 w-4" />
+              Adicionar Livro
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Cadastrar Novo Livro</DialogTitle>
+              <DialogDescription>
+                Preencha os dados do livro para adicionar ao acervo
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Título</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-title" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="author"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Autor</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-author" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="isbn"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ISBN</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-isbn" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="publisher"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Editora</FormLabel>
+                        <FormControl>
+                          <Input {...field} data-testid="input-publisher" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="yearPublished"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ano de Publicação</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                            data-testid="input-year"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="categoryId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Categoria</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-category">
+                              <SelectValue placeholder="Selecione uma categoria" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories?.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="tag"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Etiqueta de Empréstimo</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-tag">
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="red">Vermelha (Uso na Biblioteca)</SelectItem>
+                          <SelectItem value="yellow">Amarela (1 Dia)</SelectItem>
+                          <SelectItem value="white">Branca (5 Dias)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="totalCopies"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Total de Exemplares</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            data-testid="input-total-copies"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="availableCopies"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Exemplares Disponíveis</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            {...field} 
+                            onChange={(e) => field.onChange(parseInt(e.target.value))}
+                            data-testid="input-available-copies"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descrição</FormLabel>
+                      <FormControl>
+                        <Input {...field} data-testid="input-description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full" disabled={createBookMutation.isPending} data-testid="button-submit-book">
+                  {createBookMutation.isPending ? "Cadastrando..." : "Cadastrar Livro"}
+                </Button>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="flex gap-4 flex-wrap">
-        <div className="relative flex-1 min-w-[300px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Pesquisar por título, autor ou ISBN..."
-            className="pl-9"
+            placeholder="Buscar por título, autor ou ISBN..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            data-testid="input-search-books"
+            className="pl-10"
+            data-testid="input-search"
           />
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]" data-testid="select-status-filter">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos os Estados</SelectItem>
-            <SelectItem value="available">Disponível</SelectItem>
-            <SelectItem value="on-loan">Emprestado</SelectItem>
-            <SelectItem value="reserved">Reservado</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={labelFilter} onValueChange={setLabelFilter}>
-          <SelectTrigger className="w-[200px]" data-testid="select-label-filter">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Etiqueta" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas as Etiquetas</SelectItem>
-            <SelectItem value="white">Empréstimo 5 Dias</SelectItem>
-            <SelectItem value="yellow">Empréstimo 1 Dia</SelectItem>
-            <SelectItem value="red">Apenas Biblioteca</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        <Badge variant="outline" className="text-xs">
-          Total: {filteredBooks.length} livros
-        </Badge>
-        <Badge variant="outline" className="text-xs">
-          Disponíveis: {filteredBooks.filter((b) => b.status === "available").length}
-        </Badge>
-        <Badge variant="outline" className="text-xs">
-          Emprestados: {filteredBooks.filter((b) => b.status === "on-loan").length}
-        </Badge>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredBooks.map((book) => (
-          <BookCard
-            key={book.id}
-            {...book}
-            onViewDetails={(id) => console.log("Ver detalhes:", id)}
-            onLoan={(id) => console.log("Criar empréstimo:", id)}
-          />
-        ))}
-      </div>
-
-      {filteredBooks.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">Nenhum livro encontrado com os critérios selecionados</p>
+      {isLoading ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
         </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {books?.map((book) => (
+            <Card key={book.id} data-testid={`card-book-${book.id}`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-lg line-clamp-2">{book.title}</CardTitle>
+                  <Badge className={`${tagColors[book.tag as keyof typeof tagColors].bg} ${tagColors[book.tag as keyof typeof tagColors].text} flex-shrink-0`}>
+                    <Tag className="h-3 w-3 mr-1" />
+                    {tagColors[book.tag as keyof typeof tagColors].label}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">{book.author}</p>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {book.isbn && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">ISBN:</span>
+                    <span className="font-mono">{book.isbn}</span>
+                  </div>
+                )}
+                {book.publisher && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Editora:</span>
+                    <span>{book.publisher}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      <span className="font-bold text-green-600">{book.availableCopies}</span>
+                      <span className="text-muted-foreground">/{book.totalCopies}</span>
+                    </span>
+                  </div>
+                  <Badge variant={book.availableCopies > 0 ? "default" : "secondary"}>
+                    {book.availableCopies > 0 ? "Disponível" : "Indisponível"}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && books?.length === 0 && (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Nenhum livro encontrado</h3>
+            <p className="text-muted-foreground text-center">
+              {searchQuery
+                ? "Tente ajustar sua busca"
+                : "Comece adicionando livros ao acervo"}
+            </p>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
