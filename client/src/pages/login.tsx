@@ -157,9 +157,11 @@ export default function Login() {
         });
         return;
       }
-      username = registerEmail.split('@')[0];
+      username = registerEmail;
+      fullEmail = registerEmail;
     } else {
       fullEmail = `${registerEmail}@isptec.co.ao`;
+      username = `${registerEmail}@isptec.co.ao`;
     }
 
     registerMutation.mutate({
