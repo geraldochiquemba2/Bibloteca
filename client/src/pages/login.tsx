@@ -108,21 +108,6 @@ export default function Login() {
         </Card>
 
         <div className="text-center space-y-4">
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <Card className="p-3">
-              <div className="font-bold text-lg text-primary">3.842</div>
-              <div className="text-xs text-muted-foreground">Livros</div>
-            </Card>
-            <Card className="p-3">
-              <div className="font-bold text-lg text-primary">247</div>
-              <div className="text-xs text-muted-foreground">Empréstimos</div>
-            </Card>
-            <Card className="p-3">
-              <div className="font-bold text-lg text-primary">1.856</div>
-              <div className="text-xs text-muted-foreground">Utilizadores</div>
-            </Card>
-          </div>
-          
           <div className="text-xs text-white space-y-1">
             <p>Instituto Superior Politécnico de Tecnologias e Ciências</p>
             <p className="font-medium">© 2024 ISPTEC - Todos os direitos reservados</p>
