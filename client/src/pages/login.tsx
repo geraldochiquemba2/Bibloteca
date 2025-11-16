@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/contexts/AuthContext";
 import logoImage from "@assets/image_1763306167272.png";
 
 export default function Login() {
@@ -23,6 +24,7 @@ export default function Login() {
   const [registerUserType, setRegisterUserType] = useState<"student" | "teacher" | "staff">("student");
   
   const { toast } = useToast();
+  const { login } = useAuth();
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
@@ -30,12 +32,11 @@ export default function Login() {
       return await response.json();
     },
     onSuccess: (data) => {
-      localStorage.setItem("user", JSON.stringify(data.user));
+      login(data.user);
       toast({
         title: "Login realizado com sucesso!",
         description: `Bem-vindo ${data.user.name}`,
       });
-      setLocation("/dashboard");
     },
     onError: (error: any) => {
       toast({

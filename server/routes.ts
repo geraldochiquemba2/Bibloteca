@@ -107,6 +107,8 @@ async function canUserLoan(userId: string, bookId: string): Promise<{ canLoan: b
   
   const maxBooks = user.userType === "teacher" 
     ? LOAN_RULES.teacher.maxBooks 
+    : user.userType === "staff"
+    ? LOAN_RULES.staff.maxBooks
     : LOAN_RULES.student.maxBooks;
 
   if (activeLoans.length >= maxBooks) {
@@ -117,6 +119,28 @@ async function canUserLoan(userId: string, bookId: string): Promise<{ canLoan: b
   const hasThisBook = activeLoans.some(l => l.bookId === bookId);
   if (hasThisBook) {
     return { canLoan: false, reason: "Você já tem este livro emprestado" };
+  }
+
+  // For students and staff: check if they already have a book with the same title (unique titles only)
+  if (user.userType === "student" || user.userType === "staff") {
+    const activeLoanBooks = await Promise.all(
+      activeLoans.map(loan => storage.getBook(loan.bookId))
+    );
+    const hasSameTitle = activeLoanBooks.some(b => b && b.title === book.title);
+    if (hasSameTitle) {
+      return { canLoan: false, reason: "Você já tem um livro com este título emprestado. Estudantes e funcionários não podem ter títulos repetidos." };
+    }
+  }
+
+  // For teachers: only 1 copy per title (they can have up to 4 books, but only 1 copy of each title)
+  if (user.userType === "teacher") {
+    const activeLoanBooks = await Promise.all(
+      activeLoans.map(loan => storage.getBook(loan.bookId))
+    );
+    const hasSameTitle = activeLoanBooks.some(b => b && b.title === book.title);
+    if (hasSameTitle) {
+      return { canLoan: false, reason: "Você já tem uma obra deste título emprestada. Docentes podem ter apenas 1 obra por título." };
+    }
   }
 
   return { canLoan: true };

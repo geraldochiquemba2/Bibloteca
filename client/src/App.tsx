@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { PrivateRoute } from "@/components/PrivateRoute";
 import Welcome from "@/pages/welcome";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
@@ -14,6 +16,9 @@ import Loans from "@/pages/loans";
 import Users from "@/pages/users";
 import Fines from "@/pages/fines";
 import Reports from "@/pages/reports";
+import StudentDashboard from "@/pages/student-dashboard";
+import TeacherDashboard from "@/pages/teacher-dashboard";
+import StaffDashboard from "@/pages/staff-dashboard";
 import NotFound from "@/pages/not-found";
 
 function AuthenticatedRouter() {
@@ -37,33 +42,53 @@ function AuthenticatedLayout() {
   };
 
   return (
-    <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full">
-        <AppSidebar />
-        <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between px-6 py-3 border-b bg-background sticky top-0 z-10">
-            <SidebarTrigger data-testid="button-sidebar-toggle" />
-            <ThemeToggle />
-          </header>
-          <main className="flex-1 overflow-auto">
-            <AuthenticatedRouter />
-          </main>
+    <PrivateRoute requiredRole="admin">
+      <SidebarProvider style={style as React.CSSProperties}>
+        <div className="flex h-screen w-full">
+          <AppSidebar />
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <header className="flex items-center justify-between px-6 py-3 border-b bg-background sticky top-0 z-10">
+              <SidebarTrigger data-testid="button-sidebar-toggle" />
+              <ThemeToggle />
+            </header>
+            <main className="flex-1 overflow-auto">
+              <AuthenticatedRouter />
+            </main>
+          </div>
         </div>
-      </div>
-    </SidebarProvider>
+      </SidebarProvider>
+    </PrivateRoute>
   );
 }
 
 function Router() {
   const [location] = useLocation();
-  const isAuthPage = location === "/" || location === "/login";
+  const isPublicPage = location === "/" || location === "/login";
+  const isStudentPage = location.startsWith("/student");
+  const isTeacherPage = location.startsWith("/teacher");
+  const isStaffPage = location.startsWith("/staff");
 
   return (
     <Switch>
       <Route path="/" component={Welcome} />
       <Route path="/login" component={Login} />
+      <Route path="/student/dashboard">
+        <PrivateRoute requiredRole="student">
+          <StudentDashboard />
+        </PrivateRoute>
+      </Route>
+      <Route path="/teacher/dashboard">
+        <PrivateRoute requiredRole="teacher">
+          <TeacherDashboard />
+        </PrivateRoute>
+      </Route>
+      <Route path="/staff/dashboard">
+        <PrivateRoute requiredRole="staff">
+          <StaffDashboard />
+        </PrivateRoute>
+      </Route>
       <Route>
-        {isAuthPage ? <NotFound /> : <AuthenticatedLayout />}
+        {isPublicPage || isStudentPage || isTeacherPage || isStaffPage ? <NotFound /> : <AuthenticatedLayout />}
       </Route>
     </Switch>
   );
@@ -73,8 +98,10 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Router />
-        <Toaster />
+        <AuthProvider>
+          <Router />
+          <Toaster />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
