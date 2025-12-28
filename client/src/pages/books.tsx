@@ -14,6 +14,7 @@ import { z } from "zod";
 import { Plus, Search, BookOpen, Tag, Camera, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Label } from "@/components/ui/label";
 
 const bookFormSchema = z.object({
   title: z.string().min(1, "Título é obrigatório"),
@@ -221,17 +222,27 @@ export default function Books() {
                     <span className="text-xs text-muted-foreground uppercase">Ou</span>
                     <div className="h-[1px] flex-1 bg-border" />
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={handleWebSearch}
-                    disabled={isSearchingWeb}
-                    data-testid="button-web-search"
-                  >
-                    {isSearchingWeb ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                    Pesquisar dados na Internet pelo Título
-                  </Button>
+                  <div className="w-full flex flex-col gap-2">
+                    <Label htmlFor="web-title-search" className="text-xs">Ou digite o título para buscar na internet</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        id="web-title-search"
+                        placeholder="Ex: Dom Casmurro"
+                        value={form.watch("title")}
+                        onChange={(e) => form.setValue("title", e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="secondary"
+                        onClick={handleWebSearch}
+                        disabled={isSearchingWeb}
+                        data-testid="button-web-search"
+                      >
+                        {isSearchingWeb ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
