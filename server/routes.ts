@@ -707,11 +707,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Título não fornecido" });
       }
 
-      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(title)}&maxResults=1`);
+      // Pesquisa no Google Books priorizando resultados em Português e sem restrição de região para abranger Angola/África
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(title)}&langRestrict=pt&maxResults=5`);
       const data = await response.json();
 
       if (!data.items || data.items.length === 0) {
-        return res.status(404).json({ message: "Nenhum livro encontrado na internet." });
+        // Tenta uma busca mais ampla incluindo termos como "Angola" ou "África" se o título for curto
+        const broaderQuery = title.length < 10 ? `${title} Angola` : title;
+        const fallbackResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(broaderQuery)}&maxResults=5`);
+        const fallbackData = await fallbackResponse.json();
+        
+        if (!fallbackData.items || fallbackData.items.length === 0) {
+          return res.status(404).json({ message: "Nenhum livro encontrado na internet." });
+        }
+        
+        data.items = fallbackData.items;
       }
 
       const volumeInfo = data.items[0].volumeInfo;
