@@ -105,6 +105,9 @@ export default function Books() {
         if (data.yearPublished) {
           form.setValue("yearPublished", parseInt(data.yearPublished.toString()));
         }
+        if (data.description) {
+          form.setValue("description", data.description);
+        }
 
         toast({
           title: "Dados extraídos!",

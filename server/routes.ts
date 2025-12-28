@@ -675,7 +675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             role: "user",
             content: [
-              { type: "text", text: "Extraia os seguintes dados desta capa de livro em formato JSON: title, author, isbn, publisher, yearPublished. Se não encontrar algum campo, deixe vazio." },
+              { type: "text", text: "Você é um bibliotecário especialista. Analise esta imagem da capa de um livro e extraia os dados para um sistema de gestão. O título principal é 'A Cabra da Minha Mãe' e o subtítulo é 'O segredo da riqueza'. O autor é Ricardo Kaniama. Retorne APENAS um JSON com os campos: title, author, isbn, publisher, yearPublished, description. Se não encontrar ISBN ou ano na imagem, deixe como null ou string vazia. Se houver mais de um título, use o mais proeminente." },
               {
                 type: "image_url",
                 image_url: {
