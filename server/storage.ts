@@ -1,5 +1,5 @@
-import { 
-  type User, 
+import {
+  type User,
   type InsertUser,
   type Book,
   type InsertBook,
@@ -14,9 +14,18 @@ import {
   type LoanRequest,
   type InsertLoanRequest,
   type RenewalRequest,
-  type InsertRenewalRequest
+  type InsertRenewalRequest,
+  users,
+  books,
+  loans,
+  categories,
+  reservations,
+  fines,
+  loanRequests,
+  renewalRequests
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq, ilike, and, or, lt } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -25,7 +34,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
-  
+
   // Book methods
   getBook(id: string): Promise<Book | undefined>;
   getAllBooks(): Promise<Book[]>;
@@ -33,12 +42,12 @@ export interface IStorage {
   createBook(book: InsertBook): Promise<Book>;
   updateBook(id: string, book: Partial<InsertBook>): Promise<Book | undefined>;
   deleteBook(id: string): Promise<boolean>;
-  
+
   // Category methods
   getCategory(id: string): Promise<Category | undefined>;
   getAllCategories(): Promise<Category[]>;
   createCategory(category: InsertCategory): Promise<Category>;
-  
+
   // Loan methods
   getLoan(id: string): Promise<Loan | undefined>;
   getAllLoans(): Promise<Loan[]>;
@@ -48,7 +57,7 @@ export interface IStorage {
   getOverdueLoans(): Promise<Loan[]>;
   createLoan(loan: InsertLoan): Promise<Loan>;
   updateLoan(id: string, loan: Partial<InsertLoan>): Promise<Loan | undefined>;
-  
+
   // Reservation methods
   getReservation(id: string): Promise<Reservation | undefined>;
   getAllReservations(): Promise<Reservation[]>;
@@ -56,14 +65,14 @@ export interface IStorage {
   getReservationsByBook(bookId: string): Promise<Reservation[]>;
   createReservation(reservation: InsertReservation): Promise<Reservation>;
   updateReservation(id: string, reservation: Partial<InsertReservation>): Promise<Reservation | undefined>;
-  
+
   // Fine methods
   getFine(id: string): Promise<Fine | undefined>;
   getAllFines(): Promise<Fine[]>;
   getFinesByUser(userId: string): Promise<Fine[]>;
   createFine(fine: InsertFine): Promise<Fine>;
   updateFine(id: string, fine: Partial<InsertFine>): Promise<Fine | undefined>;
-  
+
   // Loan Request methods
   getLoanRequest(id: string): Promise<LoanRequest | undefined>;
   getAllLoanRequests(): Promise<LoanRequest[]>;
@@ -71,7 +80,7 @@ export interface IStorage {
   getLoanRequestsByStatus(status: string): Promise<LoanRequest[]>;
   createLoanRequest(loanRequest: InsertLoanRequest): Promise<LoanRequest>;
   updateLoanRequest(id: string, loanRequest: Partial<InsertLoanRequest>): Promise<LoanRequest | undefined>;
-  
+
   // Renewal Request methods
   getRenewalRequest(id: string): Promise<RenewalRequest | undefined>;
   getAllRenewalRequests(): Promise<RenewalRequest[]>;
@@ -81,407 +90,260 @@ export interface IStorage {
   updateRenewalRequest(id: string, renewalRequest: Partial<InsertRenewalRequest>): Promise<RenewalRequest | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private books: Map<string, Book>;
-  private categories: Map<string, Category>;
-  private loans: Map<string, Loan>;
-  private reservations: Map<string, Reservation>;
-  private fines: Map<string, Fine>;
-  private loanRequests: Map<string, LoanRequest>;
-  private renewalRequests: Map<string, RenewalRequest>;
-
-  constructor() {
-    this.users = new Map();
-    this.books = new Map();
-    this.categories = new Map();
-    this.loans = new Map();
-    this.reservations = new Map();
-    this.fines = new Map();
-    this.loanRequests = new Map();
-    this.renewalRequests = new Map();
-    
-    // Initialize with default admin user
-    const adminId = randomUUID();
-    this.users.set(adminId, {
-      id: adminId,
-      username: "admin@isptec.co.ao",
-      password: "admin123",
-      name: "Administrador",
-      email: "admin@isptec.co.ao",
-      userType: "admin" as const,
-      isActive: true,
-      createdAt: new Date(),
-    });
-    
-    // Initialize with sample categories
-    const categories = [
-      { name: "Informática", description: "Livros de Ciência da Computação e TI" },
-      { name: "Engenharia", description: "Livros de Engenharia" },
-      { name: "Matemática", description: "Livros de Matemática" },
-      { name: "Física", description: "Livros de Física" },
-      { name: "Literatura", description: "Literatura geral" },
-    ];
-    
-    categories.forEach(cat => {
-      const id = randomUUID();
-      this.categories.set(id, { id, ...cat });
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { 
-      id,
-      username: insertUser.username,
-      password: insertUser.password,
-      name: insertUser.name,
-      email: insertUser.email,
-      userType: insertUser.userType ?? "student",
-      isActive: insertUser.isActive ?? true,
-      createdAt: new Date(),
-    };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async updateUser(id: string, userData: Partial<InsertUser>): Promise<User | undefined> {
-    const user = this.users.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser = { ...user, ...userData };
-    this.users.set(id, updatedUser);
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
     return updatedUser;
   }
 
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    return await db.select().from(users);
   }
 
   // Book methods
   async getBook(id: string): Promise<Book | undefined> {
-    return this.books.get(id);
+    const [book] = await db.select().from(books).where(eq(books.id, id));
+    return book;
   }
 
   async getAllBooks(): Promise<Book[]> {
-    return Array.from(this.books.values());
+    return await db.select().from(books);
   }
 
   async searchBooks(query: string): Promise<Book[]> {
-    const lowerQuery = query.toLowerCase();
-    return Array.from(this.books.values()).filter(
-      (book) =>
-        book.title.toLowerCase().includes(lowerQuery) ||
-        book.author.toLowerCase().includes(lowerQuery) ||
-        book.isbn?.toLowerCase().includes(lowerQuery),
+    const lowerQuery = `%${query.toLowerCase()}%`;
+    return await db.select().from(books).where(
+      or(
+        ilike(books.title, lowerQuery),
+        ilike(books.author, lowerQuery),
+        ilike(books.isbn, lowerQuery)
+      )
     );
   }
 
   async createBook(insertBook: InsertBook): Promise<Book> {
-    const id = randomUUID();
-    const book: Book = { 
-      id,
-      title: insertBook.title,
-      author: insertBook.author,
-      isbn: insertBook.isbn ?? null,
-      publisher: insertBook.publisher ?? null,
-      yearPublished: insertBook.yearPublished ?? null,
-      categoryId: insertBook.categoryId ?? null,
-      department: insertBook.department ?? "outros",
-      tag: insertBook.tag ?? "white",
-      totalCopies: insertBook.totalCopies ?? 1,
-      availableCopies: insertBook.availableCopies ?? 1,
-      description: insertBook.description ?? null,
-      coverImage: insertBook.coverImage ?? null,
-      createdAt: new Date(),
-    };
-    this.books.set(id, book);
+    const [book] = await db.insert(books).values(insertBook).returning();
     return book;
   }
 
   async updateBook(id: string, bookData: Partial<InsertBook>): Promise<Book | undefined> {
-    const book = this.books.get(id);
-    if (!book) return undefined;
-    
-    const updatedBook = { ...book, ...bookData };
-    this.books.set(id, updatedBook);
+    const [updatedBook] = await db
+      .update(books)
+      .set(bookData)
+      .where(eq(books.id, id))
+      .returning();
     return updatedBook;
   }
 
   async deleteBook(id: string): Promise<boolean> {
-    return this.books.delete(id);
+    const [deletedBook] = await db.delete(books).where(eq(books.id, id)).returning();
+    return !!deletedBook;
   }
 
   // Category methods
   async getCategory(id: string): Promise<Category | undefined> {
-    return this.categories.get(id);
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category;
   }
 
   async getAllCategories(): Promise<Category[]> {
-    return Array.from(this.categories.values());
+    return await db.select().from(categories);
   }
 
   async createCategory(insertCategory: InsertCategory): Promise<Category> {
-    const id = randomUUID();
-    const category: Category = { 
-      id, 
-      name: insertCategory.name,
-      description: insertCategory.description ?? null,
-    };
-    this.categories.set(id, category);
+    const [category] = await db.insert(categories).values(insertCategory).returning();
     return category;
   }
 
   // Loan methods
   async getLoan(id: string): Promise<Loan | undefined> {
-    return this.loans.get(id);
+    const [loan] = await db.select().from(loans).where(eq(loans.id, id));
+    return loan;
   }
 
   async getAllLoans(): Promise<Loan[]> {
-    return Array.from(this.loans.values());
+    return await db.select().from(loans);
   }
 
   async getLoansByUser(userId: string): Promise<Loan[]> {
-    return Array.from(this.loans.values()).filter(
-      (loan) => loan.userId === userId,
-    );
+    return await db.select().from(loans).where(eq(loans.userId, userId));
   }
 
   async getLoansByBook(bookId: string): Promise<Loan[]> {
-    return Array.from(this.loans.values()).filter(
-      (loan) => loan.bookId === bookId,
-    );
+    return await db.select().from(loans).where(eq(loans.bookId, bookId));
   }
 
   async getActiveLoans(): Promise<Loan[]> {
-    return Array.from(this.loans.values()).filter(
-      (loan) => loan.status === "active",
-    );
+    return await db.select().from(loans).where(eq(loans.status, "active"));
   }
 
   async getOverdueLoans(): Promise<Loan[]> {
-    const now = new Date();
-    return Array.from(this.loans.values()).filter(
-      (loan) => loan.status === "active" && new Date(loan.dueDate) < now,
-    );
+    return await db
+      .select()
+      .from(loans)
+      .where(and(eq(loans.status, "active"), lt(loans.dueDate, new Date())));
   }
 
   async createLoan(insertLoan: InsertLoan): Promise<Loan> {
-    const id = randomUUID();
-    const loan: Loan = { 
-      id,
-      userId: insertLoan.userId,
-      bookId: insertLoan.bookId,
-      dueDate: insertLoan.dueDate,
-      status: insertLoan.status ?? "active",
-      returnDate: insertLoan.returnDate ?? null,
-      renewalCount: insertLoan.renewalCount ?? 0,
-      loanDate: new Date(),
-      createdAt: new Date(),
-    };
-    this.loans.set(id, loan);
+    const [loan] = await db.insert(loans).values(insertLoan).returning();
     return loan;
   }
 
   async updateLoan(id: string, loanData: Partial<InsertLoan>): Promise<Loan | undefined> {
-    const loan = this.loans.get(id);
-    if (!loan) return undefined;
-    
-    const updatedLoan = { ...loan, ...loanData };
-    this.loans.set(id, updatedLoan);
+    const [updatedLoan] = await db
+      .update(loans)
+      .set(loanData)
+      .where(eq(loans.id, id))
+      .returning();
     return updatedLoan;
   }
 
   // Reservation methods
   async getReservation(id: string): Promise<Reservation | undefined> {
-    return this.reservations.get(id);
+    const [reservation] = await db.select().from(reservations).where(eq(reservations.id, id));
+    return reservation;
   }
 
   async getAllReservations(): Promise<Reservation[]> {
-    return Array.from(this.reservations.values());
+    return await db.select().from(reservations);
   }
 
   async getReservationsByUser(userId: string): Promise<Reservation[]> {
-    return Array.from(this.reservations.values()).filter(
-      (reservation) => reservation.userId === userId,
-    );
+    return await db.select().from(reservations).where(eq(reservations.userId, userId));
   }
 
   async getReservationsByBook(bookId: string): Promise<Reservation[]> {
-    return Array.from(this.reservations.values()).filter(
-      (reservation) => reservation.bookId === bookId,
-    );
+    return await db.select().from(reservations).where(eq(reservations.bookId, bookId));
   }
 
   async createReservation(insertReservation: InsertReservation): Promise<Reservation> {
-    const id = randomUUID();
-    const reservation: Reservation = { 
-      id,
-      userId: insertReservation.userId,
-      bookId: insertReservation.bookId,
-      status: insertReservation.status ?? "pending",
-      notificationDate: insertReservation.notificationDate ?? null,
-      expirationDate: insertReservation.expirationDate ?? null,
-      reservationDate: new Date(),
-      createdAt: new Date(),
-    };
-    this.reservations.set(id, reservation);
+    const [reservation] = await db.insert(reservations).values(insertReservation).returning();
     return reservation;
   }
 
   async updateReservation(id: string, reservationData: Partial<InsertReservation>): Promise<Reservation | undefined> {
-    const reservation = this.reservations.get(id);
-    if (!reservation) return undefined;
-    
-    const updatedReservation = { ...reservation, ...reservationData };
-    this.reservations.set(id, updatedReservation);
+    const [updatedReservation] = await db
+      .update(reservations)
+      .set(reservationData)
+      .where(eq(reservations.id, id))
+      .returning();
     return updatedReservation;
   }
 
   // Fine methods
   async getFine(id: string): Promise<Fine | undefined> {
-    return this.fines.get(id);
+    const [fine] = await db.select().from(fines).where(eq(fines.id, id));
+    return fine;
   }
 
   async getAllFines(): Promise<Fine[]> {
-    return Array.from(this.fines.values());
+    return await db.select().from(fines);
   }
 
   async getFinesByUser(userId: string): Promise<Fine[]> {
-    return Array.from(this.fines.values()).filter(
-      (fine) => fine.userId === userId,
-    );
+    return await db.select().from(fines).where(eq(fines.userId, userId));
   }
 
   async createFine(insertFine: InsertFine): Promise<Fine> {
-    const id = randomUUID();
-    const fine: Fine = { 
-      id,
-      loanId: insertFine.loanId,
-      userId: insertFine.userId,
-      amount: insertFine.amount,
-      status: insertFine.status ?? "pending",
-      daysOverdue: insertFine.daysOverdue,
-      paymentDate: insertFine.paymentDate ?? null,
-      createdAt: new Date(),
-    };
-    this.fines.set(id, fine);
+    const [fine] = await db.insert(fines).values(insertFine).returning();
     return fine;
   }
 
   async updateFine(id: string, fineData: Partial<InsertFine>): Promise<Fine | undefined> {
-    const fine = this.fines.get(id);
-    if (!fine) return undefined;
-    
-    const updatedFine = { ...fine, ...fineData };
-    this.fines.set(id, updatedFine);
+    const [updatedFine] = await db
+      .update(fines)
+      .set(fineData)
+      .where(eq(fines.id, id))
+      .returning();
     return updatedFine;
   }
 
   // Loan Request methods
   async getLoanRequest(id: string): Promise<LoanRequest | undefined> {
-    return this.loanRequests.get(id);
+    const [request] = await db.select().from(loanRequests).where(eq(loanRequests.id, id));
+    return request;
   }
 
   async getAllLoanRequests(): Promise<LoanRequest[]> {
-    return Array.from(this.loanRequests.values());
+    return await db.select().from(loanRequests);
   }
 
   async getLoanRequestsByUser(userId: string): Promise<LoanRequest[]> {
-    return Array.from(this.loanRequests.values()).filter(
-      (request) => request.userId === userId,
-    );
+    return await db.select().from(loanRequests).where(eq(loanRequests.userId, userId));
   }
 
   async getLoanRequestsByStatus(status: string): Promise<LoanRequest[]> {
-    return Array.from(this.loanRequests.values()).filter(
-      (request) => request.status === status,
-    );
+    // We need to cast the string status to the enum type if strict, but drizzle usually handles string -> enum comparison if valid.
+    // Casting to any to avoid strict type issues if enum mismatch, though it should be fine.
+    return await db.select().from(loanRequests).where(eq(loanRequests.status, status as any));
   }
 
   async createLoanRequest(insertLoanRequest: InsertLoanRequest): Promise<LoanRequest> {
-    const id = randomUUID();
-    const loanRequest: LoanRequest = {
-      id,
-      userId: insertLoanRequest.userId,
-      bookId: insertLoanRequest.bookId,
-      status: insertLoanRequest.status ?? "pending",
-      reviewedBy: insertLoanRequest.reviewedBy ?? null,
-      reviewDate: insertLoanRequest.reviewDate ?? null,
-      notes: insertLoanRequest.notes ?? null,
-      requestDate: new Date(),
-      createdAt: new Date(),
-    };
-    this.loanRequests.set(id, loanRequest);
-    return loanRequest;
+    const [request] = await db.insert(loanRequests).values(insertLoanRequest).returning();
+    return request;
   }
 
   async updateLoanRequest(id: string, loanRequestData: Partial<InsertLoanRequest>): Promise<LoanRequest | undefined> {
-    const loanRequest = this.loanRequests.get(id);
-    if (!loanRequest) return undefined;
-    
-    const updatedLoanRequest = { ...loanRequest, ...loanRequestData };
-    this.loanRequests.set(id, updatedLoanRequest);
-    return updatedLoanRequest;
+    const [updatedRequest] = await db
+      .update(loanRequests)
+      .set(loanRequestData)
+      .where(eq(loanRequests.id, id))
+      .returning();
+    return updatedRequest;
   }
 
   // Renewal Request methods
   async getRenewalRequest(id: string): Promise<RenewalRequest | undefined> {
-    return this.renewalRequests.get(id);
+    const [request] = await db.select().from(renewalRequests).where(eq(renewalRequests.id, id));
+    return request;
   }
 
   async getAllRenewalRequests(): Promise<RenewalRequest[]> {
-    return Array.from(this.renewalRequests.values());
+    return await db.select().from(renewalRequests);
   }
 
   async getRenewalRequestsByUser(userId: string): Promise<RenewalRequest[]> {
-    return Array.from(this.renewalRequests.values()).filter(
-      (request) => request.userId === userId,
-    );
+    return await db.select().from(renewalRequests).where(eq(renewalRequests.userId, userId));
   }
 
   async getRenewalRequestsByStatus(status: string): Promise<RenewalRequest[]> {
-    return Array.from(this.renewalRequests.values()).filter(
-      (request) => request.status === status,
-    );
+    return await db.select().from(renewalRequests).where(eq(renewalRequests.status, status as any));
   }
 
   async createRenewalRequest(insertRenewalRequest: InsertRenewalRequest): Promise<RenewalRequest> {
-    const id = randomUUID();
-    const renewalRequest: RenewalRequest = {
-      id,
-      loanId: insertRenewalRequest.loanId,
-      userId: insertRenewalRequest.userId,
-      status: insertRenewalRequest.status ?? "pending",
-      reviewedBy: insertRenewalRequest.reviewedBy ?? null,
-      reviewDate: insertRenewalRequest.reviewDate ?? null,
-      notes: insertRenewalRequest.notes ?? null,
-      requestDate: new Date(),
-      createdAt: new Date(),
-    };
-    this.renewalRequests.set(id, renewalRequest);
-    return renewalRequest;
+    const [request] = await db.insert(renewalRequests).values(insertRenewalRequest).returning();
+    return request;
   }
 
   async updateRenewalRequest(id: string, renewalRequestData: Partial<InsertRenewalRequest>): Promise<RenewalRequest | undefined> {
-    const renewalRequest = this.renewalRequests.get(id);
-    if (!renewalRequest) return undefined;
-    
-    const updatedRenewalRequest = { ...renewalRequest, ...renewalRequestData };
-    this.renewalRequests.set(id, updatedRenewalRequest);
-    return updatedRenewalRequest;
+    const [updatedRequest] = await db
+      .update(renewalRequests)
+      .set(renewalRequestData)
+      .where(eq(renewalRequests.id, id))
+      .returning();
+    return updatedRequest;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
+
