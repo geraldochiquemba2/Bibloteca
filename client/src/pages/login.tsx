@@ -17,12 +17,12 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  
+
   const [registerName, setRegisterName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerUserType, setRegisterUserType] = useState<"student" | "teacher" | "staff">("student");
-  
+
   const { toast } = useToast();
   const { login } = useAuth();
 
@@ -37,7 +37,7 @@ export default function Login() {
         title: "Login realizado com sucesso!",
         description: `Bem-vindo ${data.user.name}`,
       });
-      
+
       setTimeout(() => {
         switch (data.user.userType) {
           case "admin":
@@ -67,11 +67,11 @@ export default function Login() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (userData: { 
+    mutationFn: async (userData: {
       name: string;
       username: string;
-      email: string; 
-      password: string; 
+      email: string;
+      password: string;
       userType: string;
     }) => {
       const response = await apiRequest("POST", "/api/users", userData);
@@ -98,7 +98,7 @@ export default function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!username || !password) {
       toast({
         title: "Erro no login",
@@ -109,7 +109,7 @@ export default function Login() {
     }
 
     let fullUsername = username;
-    
+
     if (username.includes('@')) {
       if (!username.endsWith('@isptec.co.ao')) {
         toast({
@@ -128,7 +128,7 @@ export default function Login() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!registerName || !registerEmail || !registerPassword) {
       toast({
         title: "Erro no cadastro",
@@ -149,7 +149,7 @@ export default function Login() {
 
     let fullEmail = registerEmail;
     let username = registerEmail;
-    
+
     if (registerEmail.includes('@')) {
       if (!registerEmail.endsWith('@isptec.co.ao')) {
         toast({
@@ -178,9 +178,9 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
       <div className="absolute inset-0 -z-10">
-        <img 
-          src="https://images.pexels.com/photos/8199629/pexels-photo-8199629.jpeg" 
-          alt="Biblioteca de fundo" 
+        <img
+          src="https://images.pexels.com/photos/8199629/pexels-photo-8199629.jpeg"
+          alt="Biblioteca de fundo"
           className="w-full h-full object-cover"
         />
       </div>
@@ -223,7 +223,7 @@ export default function Login() {
                 <TabsTrigger value="login" data-testid="tab-login">Login</TabsTrigger>
                 <TabsTrigger value="register" data-testid="tab-register">Cadastro</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
@@ -254,9 +254,9 @@ export default function Login() {
                       disabled={loginMutation.isPending}
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     data-testid="button-login"
                     disabled={loginMutation.isPending}
                   >
@@ -265,10 +265,10 @@ export default function Login() {
                 </form>
                 <div className="mt-4 text-sm text-muted-foreground text-center">
                   <p>Credenciais padrão:</p>
-                  <p className="font-mono">admin / admin123</p>
+                  <p className="font-mono">admin / 123456789</p>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="register" className="space-y-4">
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
@@ -313,8 +313,8 @@ export default function Login() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="register-type">Tipo de Utilizador</Label>
-                    <Select 
-                      value={registerUserType} 
+                    <Select
+                      value={registerUserType}
                       onValueChange={(value: "student" | "teacher" | "staff") => setRegisterUserType(value)}
                       disabled={registerMutation.isPending}
                     >
@@ -328,9 +328,9 @@ export default function Login() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     data-testid="button-register"
                     disabled={registerMutation.isPending}
                   >
