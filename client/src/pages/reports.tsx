@@ -3,39 +3,66 @@ import { Button } from "@/components/ui/button";
 import { Download, TrendingUp, Users, BookOpen, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-//todo: remove mock functionality
-const mockReports = {
-  utilization: {
-    totalBooks: 3842,
-    activeLoans: 247,
-    utilizationRate: 6.4,
-    neverBorrowed: 518,
-  },
-  topCategories: [
-    { name: "Ciência da Computação", loans: 189, percentage: 38 },
-    { name: "Engenharia de Software", loans: 156, percentage: 31 },
-    { name: "Redes e Sistemas", loans: 87, percentage: 17 },
-    { name: "Matemática", loans: 42, percentage: 9 },
-    { name: "Outros", loans: 26, percentage: 5 },
-  ],
-  userActivity: {
-    mostActive: [
-      { name: "Prof. António Cassoma", loans: 67, type: "Docente" },
-      { name: "Maria Nzinga", loans: 54, type: "Estudante" },
-      { name: "Prof. Sara Fernandes", loans: 48, type: "Docente" },
-      { name: "João Domingos", loans: 42, type: "Estudante" },
-      { name: "Carlos Mateus", loans: 38, type: "Funcionário" },
-    ],
-  },
-  financial: {
-    totalFines: 87500,
-    paidFines: 62000,
-    pendingFines: 25500,
-    blockedUsers: 1,
-  },
-};
+import { useQuery } from "@tanstack/react-query";
+
+interface FinancialStats {
+  totalFinesAmount: number;
+  paidFinesAmount: number;
+  pendingFines: number;
+  blockedUsers: number;
+}
+
+interface Stats extends FinancialStats {
+  totalBooks: number;
+  activeLoans: number;
+  availableBooks: number;
+}
+
+interface CategoryStat {
+  name: string;
+  loans: number;
+  percentage: number;
+}
+
+interface UserActivity {
+  id: string;
+  name: string;
+  loans: number;
+  type: string;
+}
 
 export default function Reports() {
+  const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
+    queryKey: ["/api/dashboard/stats"],
+  });
+
+  const { data: categories, isLoading: categoriesLoading } = useQuery<CategoryStat[]>({
+    queryKey: ["/api/reports/categories"],
+  });
+
+  // We can reuse /api/users to get most active users if we sort them, or a new endpoint.
+  // For now, let's fetch all users, which now includes 'currentLoans', and sort client side.
+  const { data: users, isLoading: usersLoading } = useQuery<any[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const activeUsers = users
+    ?.sort((a, b) => b.currentLoans - a.currentLoans)
+    .slice(0, 5)
+    .map(u => ({
+      name: u.name,
+      loans: u.currentLoans,
+      type: u.userType
+    })) || [];
+
+  if (statsLoading || categoriesLoading || usersLoading) {
+    return <div className="p-6">Carregando relatórios...</div>;
+  }
+
+  const utilizationRate = stats?.totalBooks ? Math.round((stats.activeLoans / stats.totalBooks) * 100) : 0;
+  const neverBorrowed = stats?.availableBooks; // Crude proxy, but okay for now. Actually available != never borrowed.
+  // Using availableBooks as "Not currently borrowed" for now.
+
   return (
     <div className="flex-1 space-y-6 p-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -58,21 +85,21 @@ export default function Reports() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockReports.utilization.utilizationRate}%</div>
+            <div className="text-2xl font-bold">{utilizationRate}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {mockReports.utilization.activeLoans} de {mockReports.utilization.totalBooks.toLocaleString()} livros
+              {stats?.activeLoans} de {stats?.totalBooks.toLocaleString()} livros
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nunca Emprestados</CardTitle>
+            <CardTitle className="text-sm font-medium">Disponíveis</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockReports.utilization.neverBorrowed}</div>
-            <p className="text-xs text-muted-foreground mt-1">Livros sem empréstimo</p>
+            <div className="text-2xl font-bold">{stats?.availableBooks}</div>
+            <p className="text-xs text-muted-foreground mt-1">Livros nas prateleiras</p>
           </CardContent>
         </Card>
 
@@ -82,9 +109,9 @@ export default function Reports() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockReports.financial.totalFines.toLocaleString()} Kz</div>
+            <div className="text-2xl font-bold">{stats?.totalFinesAmount.toLocaleString()} Kz</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {mockReports.financial.paidFines.toLocaleString()} Kz cobrados
+              {stats?.paidFinesAmount.toLocaleString()} Kz cobrados
             </p>
           </CardContent>
         </Card>
@@ -95,7 +122,7 @@ export default function Reports() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockReports.financial.blockedUsers}</div>
+            <div className="text-2xl font-bold">{stats?.blockedUsers}</div>
             <p className="text-xs text-muted-foreground mt-1">Por multas pendentes</p>
           </CardContent>
         </Card>
@@ -109,7 +136,7 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockReports.topCategories.map((category, index) => (
+              {categories?.map((category, index) => (
                 <div key={index} className="flex items-center gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-1">
@@ -139,14 +166,14 @@ export default function Reports() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {mockReports.userActivity.mostActive.map((user, index) => (
+              {activeUsers.map((user, index) => (
                 <div key={index} className="flex items-center gap-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-bold flex-shrink-0">
                     {index + 1}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.type}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{user.type}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="font-bold text-lg">{user.loans}</p>
@@ -168,20 +195,22 @@ export default function Reports() {
           <div className="grid gap-6 md:grid-cols-3">
             <div>
               <p className="text-sm text-muted-foreground mb-2">Total de Multas Emitidas</p>
-              <p className="text-3xl font-bold">{mockReports.financial.totalFines.toLocaleString()} Kz</p>
+              <p className="text-3xl font-bold">{stats?.totalFinesAmount.toLocaleString()} Kz</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-2">Multas Pagas</p>
-              <p className="text-3xl font-bold text-chart-2">{mockReports.financial.paidFines.toLocaleString()} Kz</p>
+              <p className="text-3xl font-bold text-chart-2">{stats?.paidFinesAmount.toLocaleString()} Kz</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {((mockReports.financial.paidFines / mockReports.financial.totalFines) * 100).toFixed(1)}% taxa de cobrança
+                {stats && stats.totalFinesAmount > 0
+                  ? ((stats.paidFinesAmount / stats.totalFinesAmount) * 100).toFixed(1)
+                  : 0}% taxa de cobrança
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground mb-2">Multas Pendentes</p>
-              <p className="text-3xl font-bold text-destructive">{mockReports.financial.pendingFines.toLocaleString()} Kz</p>
+              <p className="text-3xl font-bold text-destructive">{((stats?.totalFinesAmount || 0) - (stats?.paidFinesAmount || 0)).toLocaleString()} Kz</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {mockReports.financial.blockedUsers} utilizadores bloqueados
+                Value pending
               </p>
             </div>
           </div>

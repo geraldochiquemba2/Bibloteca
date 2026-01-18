@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { insertBookSchema, insertUserSchema, insertLoanSchema, insertReservationSchema, insertFineSchema, insertCategorySchema } from "@shared/schema";
 import OpenAI from "openai";
 
-const openai = new OpenAI({ 
+const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
 });
@@ -110,12 +110,12 @@ async function canUserLoan(userId: string, bookId: string): Promise<{ canLoan: b
   // Check loan limits
   const userLoans = await storage.getLoansByUser(userId);
   const activeLoans = userLoans.filter(l => l.status === "active");
-  
-  const maxBooks = user.userType === "teacher" 
-    ? LOAN_RULES.teacher.maxBooks 
+
+  const maxBooks = user.userType === "teacher"
+    ? LOAN_RULES.teacher.maxBooks
     : user.userType === "staff"
-    ? LOAN_RULES.staff.maxBooks
-    : LOAN_RULES.student.maxBooks;
+      ? LOAN_RULES.staff.maxBooks
+      : LOAN_RULES.student.maxBooks;
 
   if (activeLoans.length >= maxBooks) {
     return { canLoan: false, reason: `Limite de ${maxBooks} livros atingido` };
@@ -158,7 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username, password } = req.body;
       const user = await storage.getUserByUsername(username);
-      
+
       if (!user || user.password !== password) {
         return res.status(401).json({ message: "Credenciais inválidas" });
       }
@@ -167,14 +167,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Utilizador inativo" });
       }
 
-      res.json({ 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          name: user.name, 
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
           email: user.email,
-          userType: user.userType 
-        } 
+          userType: user.userType
+        }
       });
     } catch (error) {
       res.status(500).json({ message: "Erro no servidor" });
@@ -185,16 +185,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users", async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      const usersWithoutPasswords = users.map(u => ({
-        id: u.id,
-        username: u.username,
-        name: u.name,
-        email: u.email,
-        userType: u.userType,
-        isActive: u.isActive,
-        createdAt: u.createdAt,
+      const usersWithStats = await Promise.all(users.map(async (u) => {
+        const fines = await getUserTotalFines(u.id);
+        const loans = await storage.getLoansByUser(u.id);
+        const activeLoansCount = loans.filter(l => l.status === "active").length;
+
+        return {
+          id: u.id,
+          username: u.username,
+          name: u.name,
+          email: u.email,
+          userType: u.userType,
+          isActive: u.isActive,
+          createdAt: u.createdAt,
+          currentLoans: activeLoansCount,
+          fines: fines
+        };
       }));
-      res.json(usersWithoutPasswords);
+      res.json(usersWithStats);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar utilizadores" });
     }
@@ -262,27 +270,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { search, department, categoryId } = req.query;
       let books = await storage.getAllBooks();
-      
+
       // Apply search filter
       if (search && typeof search === "string") {
         const searchLower = search.toLowerCase();
-        books = books.filter(book => 
+        books = books.filter(book =>
           book.title.toLowerCase().includes(searchLower) ||
           book.author.toLowerCase().includes(searchLower) ||
           (book.isbn && book.isbn.toLowerCase().includes(searchLower))
         );
       }
-      
+
       // Apply department filter
       if (department && typeof department === "string") {
         books = books.filter(book => book.department === department);
       }
-      
+
       // Apply category filter
       if (categoryId && typeof categoryId === "string") {
         books = books.filter(book => book.categoryId === categoryId);
       }
-      
+
       res.json(books);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar livros" });
@@ -340,7 +348,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, bookId, status } = req.query;
       let loans;
-      
+
       if (userId && typeof userId === "string") {
         loans = await storage.getLoansByUser(userId);
       } else if (bookId && typeof bookId === "string") {
@@ -352,8 +360,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         loans = await storage.getAllLoans();
       }
-      
-      res.json(loans);
+
+      const loansWithDetails = await Promise.all(loans.map(async (loan) => {
+        const user = await storage.getUser(loan.userId);
+        const book = await storage.getBook(loan.bookId);
+        const fine = await storage.getFine(loan.id).catch(() => undefined); // Check if there's a fine linked to this loan
+
+        return {
+          ...loan,
+          userName: user?.name || "Desconhecido",
+          userType: user?.userType || "student",
+          bookTitle: book?.title || "Desconhecido",
+          fine: fine ? parseFloat(fine.amount as any) : undefined
+        };
+      }));
+
+      res.json(loansWithDetails);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar empréstimos" });
     }
@@ -362,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/loans", async (req, res) => {
     try {
       const { userId, bookId } = req.body;
-      
+
       // Validate loan eligibility
       const eligibility = await canUserLoan(userId, bookId);
       if (!eligibility.canLoan) {
@@ -371,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUser(userId);
       const book = await storage.getBook(bookId);
-      
+
       if (!user || !book) {
         return res.status(404).json({ message: "Utilizador ou livro não encontrado" });
       }
@@ -417,7 +439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate fine if overdue
       const fineInfo = calculateFine(dueDate, returnDate);
-      
+
       // Update loan
       await storage.updateLoan(loan.id, {
         status: "returned",
@@ -486,10 +508,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check for pending reservations from OTHER users
       const reservations = await storage.getReservationsByBook(loan.bookId);
-      const hasPendingReservations = reservations.some(r => 
+      const hasPendingReservations = reservations.some(r =>
         (r.status === "pending" || r.status === "notified") && r.userId !== loan.userId
       );
-      
+
       if (hasPendingReservations) {
         return res.status(400).json({ message: "Não é possível renovar. Existem reservas pendentes para este livro." });
       }
@@ -503,7 +525,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Calculate new due date
       const user = await storage.getUser(loan.userId);
       const book = await storage.getBook(loan.bookId);
-      
+
       if (!user || !book) {
         return res.status(404).json({ message: "Utilizador ou livro não encontrado" });
       }
@@ -526,7 +548,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, bookId } = req.query;
       let reservations;
-      
+
       if (userId && typeof userId === "string") {
         reservations = await storage.getReservationsByUser(userId);
       } else if (bookId && typeof bookId === "string") {
@@ -534,7 +556,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         reservations = await storage.getAllReservations();
       }
-      
+
       res.json(reservations);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar reservas" });
@@ -544,13 +566,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/reservations", async (req, res) => {
     try {
       const { userId, bookId } = req.body;
-      
+
       // Check reservation limit - only count pending and notified
       const userReservations = await storage.getReservationsByUser(userId);
-      const activeReservations = userReservations.filter(r => 
+      const activeReservations = userReservations.filter(r =>
         r.status === "pending" || r.status === "notified"
       );
-      
+
       if (activeReservations.length >= MAX_RESERVATIONS_PER_USER) {
         return res.status(400).json({ message: `Limite de ${MAX_RESERVATIONS_PER_USER} reservas simultâneas atingido` });
       }
@@ -562,10 +584,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Check if user already has a reservation for this book
-      const hasReservation = userReservations.some(r => 
+      const hasReservation = userReservations.some(r =>
         r.bookId === bookId && (r.status === "pending" || r.status === "notified")
       );
-      
+
       if (hasReservation) {
         return res.status(400).json({ message: "Você já tem uma reserva ativa para este livro" });
       }
@@ -601,13 +623,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.query;
       let fines;
-      
+
       if (userId && typeof userId === "string") {
         fines = await storage.getFinesByUser(userId);
       } else {
         fines = await storage.getAllFines();
       }
-      
+
       res.json(fines);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar multas" });
@@ -645,8 +667,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const activeLoans = loans.filter(l => l.status === "active");
       const overdueLoans = await storage.getOverdueLoans();
+
       const pendingFines = fines.filter(f => f.status === "pending");
+      const paidFines = fines.filter(f => f.status === "paid");
+
       const totalFinesAmount = pendingFines.reduce((sum, f) => sum + parseFloat(f.amount), 0);
+      const paidFinesAmount = paidFines.reduce((sum, f) => sum + parseFloat(f.amount), 0);
+
+      // Assume blocked if they have fines > MAX (need to import constants or re-use logic, but simple check for now)
+      // Or just check if user status is explicitly blocked if we had that, but we calculate it dynamically usually.
+      // Let's count users with pending fines > 2000
+      const blockedUsers = await Promise.all(users.map(async u => {
+        const total = await getUserTotalFines(u.id);
+        return total >= 2000;
+      })).then(results => results.filter(b => b).length);
 
       res.json({
         totalBooks: books.length,
@@ -656,9 +690,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         overdueLoans: overdueLoans.length,
         pendingFines: pendingFines.length,
         totalFinesAmount,
+        paidFinesAmount,
+        blockedUsers
       });
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+  });
+
+  app.get("/api/reports/categories", async (req, res) => {
+    try {
+      const loans = await storage.getAllLoans();
+      const books = await storage.getAllBooks();
+      const categories = await storage.getAllCategories();
+
+      const categoryStats = categories.map(cat => {
+        const catBooks = books.filter(b => b.categoryId === cat.id);
+        const bookIds = catBooks.map(b => b.id);
+        const loanCount = loans.filter(l => bookIds.includes(l.bookId)).length;
+
+        return {
+          name: cat.name,
+          loans: loanCount
+        };
+      });
+
+      const totalLoans = loans.length;
+      const statsWithPercentage = categoryStats
+        .map(s => ({
+          ...s,
+          percentage: totalLoans > 0 ? Math.round((s.loans / totalLoans) * 100) : 0
+        }))
+        .sort((a, b) => b.loans - a.loans)
+        .slice(0, 5); // Top 5
+
+      res.json(statsWithPercentage);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao gerar relatório de categorias" });
     }
   });
 
@@ -716,11 +784,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const broaderQuery = title.length < 10 ? `${title} Angola` : title;
         const fallbackResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(broaderQuery)}&maxResults=5`);
         const fallbackData = await fallbackResponse.json();
-        
+
         if (!fallbackData.items || fallbackData.items.length === 0) {
           return res.status(404).json({ message: "Nenhum livro encontrado na internet." });
         }
-        
+
         data.items = fallbackData.items;
       }
 
@@ -802,7 +870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, status } = req.query;
       let requests;
-      
+
       if (userId && typeof userId === "string") {
         requests = await storage.getLoanRequestsByUser(userId);
       } else if (status && typeof status === "string") {
@@ -810,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         requests = await storage.getAllLoanRequests();
       }
-      
+
       res.json(requests);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar solicitações" });
@@ -820,7 +888,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/loan-requests", async (req, res) => {
     try {
       const { userId, bookId } = req.body;
-      
+
       const request = await storage.createLoanRequest({
         userId,
         bookId,
@@ -829,7 +897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reviewDate: null,
         notes: null,
       });
-      
+
       res.status(201).json(request);
     } catch (error: any) {
       res.status(400).json({ message: error.message || "Erro ao criar solicitação" });
@@ -845,7 +913,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUser(request.userId);
       const book = await storage.getBook(request.bookId);
-      
+
       if (!user || !book) {
         return res.status(404).json({ message: "Utilizador ou livro não encontrado" });
       }
@@ -902,7 +970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, status } = req.query;
       let requests;
-      
+
       if (userId && typeof userId === "string") {
         requests = await storage.getRenewalRequestsByUser(userId);
       } else if (status && typeof status === "string") {
@@ -910,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         requests = await storage.getAllRenewalRequests();
       }
-      
+
       res.json(requests);
     } catch (error) {
       res.status(500).json({ message: "Erro ao buscar solicitações de renovação" });
@@ -920,7 +988,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/renewal-requests", async (req, res) => {
     try {
       const { loanId, userId } = req.body;
-      
+
       const request = await storage.createRenewalRequest({
         loanId,
         userId,
@@ -929,7 +997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         reviewDate: null,
         notes: null,
       });
-      
+
       res.status(201).json(request);
     } catch (error: any) {
       res.status(400).json({ message: error.message || "Erro ao criar solicitação de renovação" });
@@ -950,7 +1018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUser(loan.userId);
       const book = await storage.getBook(loan.bookId);
-      
+
       if (!user || !book) {
         return res.status(404).json({ message: "Utilizador ou livro não encontrado" });
       }

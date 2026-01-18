@@ -118,15 +118,62 @@ const mockReturnedLoans: Loan[] = [
   },
 ];
 
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+
 export default function Loans() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
 
-  const filterLoans = (loans: Loan[]) =>
-    loans.filter(
+  const { data: loans, isLoading } = useQuery<Loan[]>({
+    queryKey: ["/api/loans"],
+  });
+
+  const activeLoans = loans?.filter(l => l.status === "active") || [];
+  const overdueLoans = loans?.filter(l => l.status === "active" && new Date(l.dueDate) < new Date()) || [];
+  // Note: Backend might return 'overdue' status explicitly if implemented, but currently it returns 'active' with late dates.
+  // Actually, backend has getOverdueLoans logic but /api/loans returns all. Let's rely on status or calculation.
+  // Wait, my updated /api/loans returns everything.
+  // Let's filter client side for now.
+
+  // Actually, let's fix the overdue logic.
+  // If status is active and date is past, it's overdue visually, but status might still be 'active' in DB until a job runs or it's checked.
+  // The Mock data had explicit 'overdue' status.
+  // Let's stick to status from DB for now, but also check dates.
+
+  const returnedLoans = loans?.filter(l => l.status === "returned") || [];
+
+  const handleReturn = async (id: string) => {
+    try {
+      await apiRequest("POST", `/api/loans/${id}/return`);
+      queryClient.invalidateQueries({ queryKey: ["/api/loans"] });
+      toast({ title: "Livro devolvido com sucesso" });
+    } catch (error) {
+      toast({ title: "Erro ao devolver", variant: "destructive" });
+    }
+  };
+
+  const handleRenew = async (id: string) => {
+    try {
+      await apiRequest("POST", `/api/loans/${id}/renew`);
+      queryClient.invalidateQueries({ queryKey: ["/api/loans"] });
+      toast({ title: "Empréstimo renovado com sucesso" });
+    } catch (error) {
+      toast({ title: "Erro ao renovar", variant: "destructive" });
+    }
+  };
+
+  const filterLoans = (loansToFilter: Loan[]) =>
+    loansToFilter.filter(
       (loan) =>
         loan.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         loan.bookTitle.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+  if (isLoading) {
+    return <div className="p-6">Carregando empréstimos...</div>;
+  }
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -175,25 +222,25 @@ export default function Loans() {
 
         <TabsContent value="active" className="space-y-4">
           <LoanTable
-            loans={filterLoans(mockActiveLoans)}
-            onReturn={(id) => console.log("Devolver empréstimo:", id)}
-            onRenew={(id) => console.log("Renovar empréstimo:", id)}
+            loans={filterLoans(activeLoans)}
+            onReturn={handleReturn}
+            onRenew={handleRenew}
             onViewUser={(id) => console.log("Ver utilizador:", id)}
           />
         </TabsContent>
 
         <TabsContent value="overdue" className="space-y-4">
           <LoanTable
-            loans={filterLoans(mockOverdueLoans)}
-            onReturn={(id) => console.log("Devolver empréstimo:", id)}
-            onRenew={(id) => console.log("Renovar empréstimo:", id)}
+            loans={filterLoans(overdueLoans)}
+            onReturn={handleReturn}
+            onRenew={handleRenew}
             onViewUser={(id) => console.log("Ver utilizador:", id)}
           />
         </TabsContent>
 
         <TabsContent value="returned" className="space-y-4">
           <LoanTable
-            loans={filterLoans(mockReturnedLoans)}
+            loans={filterLoans(returnedLoans)}
             onViewUser={(id) => console.log("Ver utilizador:", id)}
           />
         </TabsContent>

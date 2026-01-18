@@ -20,104 +20,54 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-//todo: remove mock functionality
-const mockUsers = [
-  {
-    id: "1",
-    name: "Maria Nzinga",
-    email: "maria.nzinga@isptec.ao",
-    type: "estudante" as const,
-    currentLoans: 2,
-    fines: 0,
-    status: "active" as const,
-  },
-  {
-    id: "2",
-    name: "Prof. António Cassoma",
-    email: "antonio.cassoma@isptec.ao",
-    type: "docente" as const,
-    currentLoans: 3,
-    fines: 0,
-    status: "active" as const,
-  },
-  {
-    id: "3",
-    name: "Ana Kiluange",
-    email: "ana.kiluange@isptec.ao",
-    type: "estudante" as const,
-    currentLoans: 1,
-    fines: 2500,
-    status: "blocked" as const,
-  },
-  {
-    id: "4",
-    name: "Carlos Mateus",
-    email: "carlos.mateus@isptec.ao",
-    type: "funcionario" as const,
-    currentLoans: 1,
-    fines: 0,
-    status: "active" as const,
-  },
-  {
-    id: "5",
-    name: "Pedro Sakaita",
-    email: "pedro.sakaita@isptec.ao",
-    type: "estudante" as const,
-    currentLoans: 0,
-    fines: 1500,
-    status: "active" as const,
-  },
-  {
-    id: "6",
-    name: "Prof. Sara Fernandes",
-    email: "sara.fernandes@isptec.ao",
-    type: "docente" as const,
-    currentLoans: 4,
-    fines: 0,
-    status: "active" as const,
-  },
-  {
-    id: "7",
-    name: "João Domingos",
-    email: "joao.domingos@isptec.ao",
-    type: "estudante" as const,
-    currentLoans: 1,
-    fines: 0,
-    status: "active" as const,
-  },
-  {
-    id: "8",
-    name: "Luísa Mendes",
-    email: "luisa.mendes@isptec.ao",
-    type: "funcionario" as const,
-    currentLoans: 2,
-    fines: 500,
-    status: "active" as const,
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { User } from "@shared/schema";
 
-const userTypeConfig = {
-  docente: { text: "Docente", limit: "4 livros, 15 dias" },
-  estudante: { text: "Estudante", limit: "2 livros, 5 dias" },
-  funcionario: { text: "Funcionário", limit: "2 livros, 5 dias" },
+// Helper type for the enriched user data
+type UserWithStats = User & {
+  currentLoans: number;
+  fines: number;
 };
 
+const userTypeConfig = {
+  teacher: { text: "Docente", limit: "4 livros, 15 dias" },
+  student: { text: "Estudante", limit: "2 livros, 5 dias" },
+  staff: { text: "Funcionário", limit: "2 livros, 5 dias" },
+  admin: { text: "Administrador", limit: "Ilimitado" },
+} as const;
+
+// Helper to map DB user types to config keys
+function getUserTypeKey(type: string): keyof typeof userTypeConfig {
+  if (type === "teacher" || type === "student" || type === "staff" || type === "admin") {
+    return type;
+  }
+  return "student"; // Default fallback
+}
+
 const statusConfig = {
-  active: { text: "Ativo", color: "bg-chart-2 text-white" },
-  blocked: { text: "Bloqueado", color: "bg-destructive text-destructive-foreground" },
+  true: { text: "Ativo", color: "bg-chart-2 text-white" },
+  false: { text: "Inativo", color: "bg-destructive text-destructive-foreground" },
 };
 
 export default function Users() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
 
-  const filteredUsers = mockUsers.filter((user) => {
+  const { data: users, isLoading } = useQuery<UserWithStats[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const filteredUsers = (users || []).filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === "all" || user.type === typeFilter;
+    const matchesType = typeFilter === "all" || user.userType === typeFilter;
     return matchesSearch && matchesType;
   });
+
+  if (isLoading) {
+    return <div className="p-6">Carregando utilizadores...</div>;
+  }
 
   return (
     <div className="flex-1 space-y-6 p-6">
@@ -199,15 +149,15 @@ export default function Users() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium capitalize">{userTypeConfig[user.type].text}</div>
+                      <div className="font-medium capitalize">{userTypeConfig[getUserTypeKey(user.userType)].text}</div>
                       <div className="text-xs text-muted-foreground">
-                        {userTypeConfig[user.type].limit}
+                        {userTypeConfig[getUserTypeKey(user.userType)].limit}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell data-testid={`text-loans-${user.id}`}>{user.currentLoans}</TableCell>
                   <TableCell>
-                    {user.fines > 0 ? (
+                    {Number(user.fines) > 0 ? (
                       <span className="text-destructive font-medium" data-testid={`text-fines-${user.id}`}>
                         {user.fines} Kz
                       </span>
@@ -216,8 +166,8 @@ export default function Users() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge className={statusConfig[user.status].color} data-testid={`badge-status-${user.id}`}>
-                      {statusConfig[user.status].text}
+                    <Badge className={statusConfig[String(user.isActive) as "true" | "false"].color} data-testid={`badge-status-${user.id}`}>
+                      {statusConfig[String(user.isActive) as "true" | "false"].text}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
