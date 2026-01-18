@@ -4,6 +4,7 @@ services:
     runtime: node
     buildCommand: npm install && npm run build
     startCommand: npm run db:push && npm start
+    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -17,3 +18,4 @@ databases:
   - name: bibloteca-db
     databaseName: bibloteca
     user: bibloteca_user
+    plan: free
