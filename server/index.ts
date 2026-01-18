@@ -82,6 +82,16 @@ app.use((req, res, next) => {
       await storage.updateUser(adminUser.id, { username: adminEmail });
       log("Admin username fixed.");
     }
+
+    // Force reset password for the specific user reporting issues
+    const problematicEmail = "20230043@isptec.co.ao";
+    const problematicUser = allUsers.find(u => u.username === problematicEmail || u.email === problematicEmail);
+    if (problematicUser) {
+      log(`Resetting password for ${problematicEmail}...`);
+      await storage.updateUser(problematicUser.id, { password: "123456" });
+      log("Password reset successfully.");
+    }
+
   } catch (err: any) {
     log(`Error ensuring default user: ${err.message}`);
   }
