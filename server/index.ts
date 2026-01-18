@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
+import { insertUserSchema } from "@shared/schema";
 
 const app = express();
 
@@ -48,6 +50,29 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Check if database needs seeding
+  try {
+    const existingUsers = await storage.getAllUsers();
+    if (existingUsers.length === 0) {
+      log("Database is empty. Seeding default admin user...");
+      const adminData = {
+        username: "admin",
+        password: "123456789", // Default password matching the login page hint
+        name: "Administrador",
+        email: "admin@isptec.co.ao",
+        userType: "admin" as const,
+        isActive: true,
+      };
+
+      const parsedData = insertUserSchema.parse(adminData);
+      await storage.createUser(parsedData);
+      log("Default admin user created successfully.");
+    }
+  } catch (err: any) {
+    log(`Error ensuring default user: ${err.message}`);
+    // Don't throw, let server start anyway
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
