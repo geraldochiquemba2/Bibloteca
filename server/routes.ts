@@ -1140,43 +1140,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // External Book Repository Proxy
   app.get("/api/external-books", async (req, res) => {
     try {
-      const { query } = req.query;
+      const { query, source = "all" } = req.query;
       if (!query || typeof query !== 'string') {
         return res.status(400).json({ message: "Termo de busca obrigatório" });
       }
 
-      // Search for free ebooks on Google Books
-      // filter=free-ebooks ensures we only get public domain/free content
-      const googleRes = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&filter=free-ebooks&maxResults=20&langRestrict=pt`
-      );
+      let allBooks: any[] = [];
 
-      const data = await googleRes.json();
 
-      const books = (data.items || []).map((item: any) => {
-        const info = item.volumeInfo;
-        const access = item.accessInfo;
+      // Google Books
+      if (source === "all" || source === "google") {
+        try {
+          const googleRes = await fetch(
+            `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&filter=free-ebooks&maxResults=10&langRestrict=pt`
+          );
+          const data = await googleRes.json();
 
-        return {
-          id: item.id,
-          title: info.title,
-          authors: info.authors || ["Autor Desconhecido"],
-          publisher: info.publisher,
-          publishedDate: info.publishedDate,
-          description: info.description,
-          pageCount: info.pageCount,
-          categories: info.categories,
-          imageLinks: info.imageLinks,
-          language: info.language,
-          previewLink: info.previewLink,
-          // Prioritize PDF download, then EPUB, then Web Reader
-          downloadLink: access.pdf?.downloadLink || access.epub?.downloadLink || info.previewLink,
-          isPdfAvailable: access.pdf?.isAvailable,
-          isEpubAvailable: access.epub?.isAvailable
-        };
-      });
+          const googleBooks = (data.items || []).map((item: any) => {
+            const info = item.volumeInfo;
+            const access = item.accessInfo;
 
-      res.json(books);
+            return {
+              id: `google-${item.id}`,
+              source: "Google Books",
+              title: info.title,
+              authors: info.authors || ["Autor Desconhecido"],
+              publisher: info.publisher,
+              publishedDate: info.publishedDate,
+              description: info.description,
+              pageCount: info.pageCount,
+              categories: info.categories,
+              imageLinks: info.imageLinks,
+              language: info.language,
+              previewLink: info.previewLink,
+              downloadLink: access.pdf?.downloadLink || access.epub?.downloadLink || info.previewLink,
+              isPdfAvailable: access.pdf?.isAvailable,
+              isEpubAvailable: access.epub?.isAvailable
+            };
+          });
+          allBooks = allBooks.concat(googleBooks);
+        } catch (err) {
+          console.error("Google Books error:", err);
+        }
+      }
+
+      // Open Library
+      if (source === "all" || source === "openlibrary") {
+        try {
+          const openLibRes = await fetch(
+            `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10&language=por`
+          );
+          const data = await openLibRes.json();
+
+          const openLibBooks = (data.docs || []).map((doc: any) => ({
+            id: `openlibrary-${doc.key}`,
+            source: "Open Library",
+            title: doc.title,
+            authors: doc.author_name || ["Autor Desconhecido"],
+            publisher: doc.publisher?.[0],
+            publishedDate: doc.first_publish_year?.toString(),
+            description: doc.first_sentence?.[0],
+            pageCount: doc.number_of_pages_median,
+            categories: doc.subject?.slice(0, 3),
+            imageLinks: doc.cover_i ? {
+              thumbnail: `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+            } : null,
+            language: doc.language?.[0],
+            previewLink: `https://openlibrary.org${doc.key}`,
+            downloadLink: `https://openlibrary.org${doc.key}`,
+            isPdfAvailable: doc.has_fulltext,
+            isEpubAvailable: doc.has_fulltext
+          }));
+          allBooks = allBooks.concat(openLibBooks);
+        } catch (err) {
+          console.error("Open Library error:", err);
+        }
+      }
+
+      // Project Gutenberg (Gutendex)
+      if (source === "all" || source === "gutenberg") {
+        try {
+          const gutendexRes = await fetch(
+            `https://gutendex.com/books?search=${encodeURIComponent(query)}&languages=pt`
+          );
+          const data = await gutendexRes.json();
+
+          const gutenbergBooks = (data.results || []).map((book: any) => ({
+            id: `gutenberg-${book.id}`,
+            source: "Project Gutenberg",
+            title: book.title,
+            authors: book.authors?.map((a: any) => a.name) || ["Autor Desconhecido"],
+            publisher: "Project Gutenberg",
+            publishedDate: null,
+            description: book.subjects?.join(", "),
+            pageCount: null,
+            categories: book.bookshelves,
+            imageLinks: book.formats?.["image/jpeg"] ? {
+              thumbnail: book.formats["image/jpeg"]
+            } : null,
+            language: book.languages?.[0],
+            previewLink: `https://www.gutenberg.org/ebooks/${book.id}`,
+            downloadLink: book.formats?.["application/epub+zip"] || book.formats?.["application/pdf"] || book.formats?.["text/html"],
+            isPdfAvailable: !!book.formats?.["application/pdf"],
+            isEpubAvailable: !!book.formats?.["application/epub+zip"]
+          }));
+          allBooks = allBooks.concat(gutenbergBooks);
+        } catch (err) {
+          console.error("Gutendex error:", err);
+        }
+      }
+
+      res.json(allBooks);
     } catch (error: any) {
       console.error("External Search Error:", error);
       res.status(500).json({ message: "Erro ao buscar no repositório externo" });

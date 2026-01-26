@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Download, BookOpen, ExternalLink, Loader2, Library } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface ExternalBook {
     id: string;
+    source: string;
     title: string;
     authors: string[];
     publisher?: string;
@@ -28,13 +30,14 @@ interface ExternalBook {
 export default function Repository() {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeSearch, setActiveSearch] = useState("");
+    const [source, setSource] = useState("all");
     const { toast } = useToast();
 
     const { data: books, isLoading, error } = useQuery<ExternalBook[]>({
-        queryKey: ["/api/external-books", { query: activeSearch }],
+        queryKey: ["/api/external-books", { query: activeSearch, source }],
         queryFn: async () => {
             if (!activeSearch) return [];
-            const res = await apiRequest("GET", `/api/external-books?query=${encodeURIComponent(activeSearch)}`);
+            const res = await apiRequest("GET", `/api/external-books?query=${encodeURIComponent(activeSearch)}&source=${source}`);
             return res.json();
         },
         enabled: !!activeSearch,
@@ -54,13 +57,24 @@ export default function Repository() {
                     Repositório Digital
                 </h1>
                 <p className="text-muted-foreground">
-                    Pesquise e baixe obras de domínio público (Gratuitas) diretamente do Google Books.
+                    Pesquise e baixe obras de domínio público de múltiplas fontes: Google Books, Open Library e Project Gutenberg.
                 </p>
             </div>
 
             {/* Search Bar */}
             <Card className="p-4 bg-muted/50">
                 <form onSubmit={handleSearch} className="flex gap-2">
+                    <Select value={source} onValueChange={setSource}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas as Fontes</SelectItem>
+                            <SelectItem value="google">Google Books</SelectItem>
+                            <SelectItem value="openlibrary">Open Library</SelectItem>
+                            <SelectItem value="gutenberg">Gutenberg</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <Input
                         placeholder="Pesquisar por tema, autor ou título (ex: Direito, Machado de Assis)..."
                         value={searchQuery}
@@ -114,7 +128,8 @@ export default function Repository() {
                                     <p className="text-sm text-muted-foreground line-clamp-2">
                                         {book.authors?.join(", ")}
                                     </p>
-                                    <div className="flex gap-2 mt-2">
+                                    <div className="flex gap-2 mt-2 flex-wrap">
+                                        <Badge variant="outline" className="text-[10px]">{book.source}</Badge>
                                         {book.isPdfAvailable && <Badge variant="secondary" className="text-[10px]">PDF</Badge>}
                                         {book.isEpubAvailable && <Badge variant="secondary" className="text-[10px]">EPUB</Badge>}
                                     </div>
