@@ -3,11 +3,16 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertBookSchema, insertUserSchema, insertLoanSchema, insertReservationSchema, insertFineSchema, insertCategorySchema } from "@shared/schema";
 import OpenAI from "openai";
+import { createWorker } from "tesseract.js";
 
+// Initialize OpenAI only if API key is present
 const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "dummy_key_for_build",
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
+
+// Helper check for AI availability
+const isAIEnabled = !!process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
 
 // Business rules constants
 const LOAN_RULES = {
@@ -732,6 +737,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/books/ocr", async (req, res) => {
     try {
+      if (!isAIEnabled) {
+        return res.status(503).json({ message: "Funcionalidade indisponível: Chave da OpenAI não configurada no servidor." });
+      }
+
       const { image } = req.body;
       if (!image) {
         return res.status(400).json({ message: "Imagem não fornecida" });
@@ -1070,31 +1079,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Imagem é obrigatória" });
       }
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "Extraia o título, autor, ISBN (se houver), editora e ano de publicação desta capa de livro. Retorne APENAS um objeto JSON com os campos: title, author, isbn, publisher, yearPublished (número). Se não encontrar algum campo, deixe-o como null ou string vazia." },
-              {
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${image}`,
-                },
-              },
-            ],
-          },
-        ],
-        response_format: { type: "json_object" },
-      });
+      // Tesseract implementation (Local OCR)
+      const buffer = Buffer.from(image, 'base64');
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error("Falha na extração de dados");
+      const worker = await createWorker("eng+por"); // Support English and Portuguese
+      const { data: { text } } = await worker.recognize(buffer);
+      await worker.terminate();
+
+      console.log("OCR Text:", text);
+
+      // Heuristic Parsing
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+
+      const result = {
+        title: null as string | null,
+        author: null as string | null,
+        isbn: null as string | null,
+        publisher: null as string | null,
+        yearPublished: null as number | null,
+        description: null as string | null
+      };
+
+      if (lines.length > 0) {
+        // Assume the most prominent text (often first lines) is the title
+        // We'll take the first non-empty line as title candidate
+        result.title = lines[0];
+
+        // Try to find author (often looks like a name or starts with "By")
+        // Simple heuristic: 2nd line if not a subtitle, or lines containing common author markers
+        // This is very basic
+        if (lines.length > 1) {
+          const potentialAuthor = lines.find((l, i) => i > 0 && !/\d/.test(l) && l.length > 5 && l.length < 30);
+          if (potentialAuthor) result.author = potentialAuthor;
+        }
+
+        // ISBN Regex
+        const isbnRegex = /(?:ISBN(?:-1[03])?:? )?(?=[0-9X]{10}$|(?=(?:[0-9]+[- ]){3})[- 0-9X]{13,17}$)[- 0-9X]{10,13}/;
+        const potentialISBN = lines.find(l => isbnRegex.test(l));
+        if (potentialISBN) {
+          const match = potentialISBN.match(isbnRegex);
+          if (match) result.isbn = match[0].replace(/[^0-9X]/g, '');
+        }
+
+        // Year Regex (19xx or 20xx)
+        const yearRegex = /\b(19|20)\d{2}\b/;
+        const potentialYear = lines.find(l => yearRegex.test(l));
+        if (potentialYear) {
+          const match = potentialYear.match(yearRegex);
+          if (match) result.yearPublished = parseInt(match[0]);
+        }
       }
 
-      res.json(JSON.parse(content));
+      res.json(result);
     } catch (error: any) {
       console.error("Erro no OCR:", error);
       res.status(500).json({ message: "Erro ao processar imagem: " + error.message });
